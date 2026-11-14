@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>lxx-003 · Pages</title>
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23262626' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 2V22M12 2L21.5 16.5M12 2L2.5 16.5M2.5 16.5L12 22L21.5 16.5'/%3E%3C/svg%3E"
+    />
+    <style>
+      :root {
+        color-scheme: light;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: #f5f5f5;
+        color: #171717;
+        font-family: Inter, -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      .container {
+        max-width: 760px;
+        margin: 0 auto;
+        padding: 64px 24px 96px;
+      }
+      header {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding-bottom: 32px;
+        border-bottom: 1px solid #e5e5e5;
+      }
+      header svg {
+        width: 34px;
+        height: 34px;
+        color: #262626;
+        flex-shrink: 0;
+      }
+      h1 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 600;
+      }
+      .subtitle {
+        margin: 4px 0 0;
+        font-size: 13px;
+        color: #737373;
+      }
+      .list {
+        margin-top: 32px;
+        display: grid;
+        gap: 14px;
+      }
+      .card {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 20px 22px;
+        border-radius: 12px;
+        border: 1px solid #e5e5e5;
+        background: rgba(255, 255, 255, 0.78);
+        text-decoration: none;
+        color: inherit;
+        transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+      }
+      .card:hover {
+        border-color: #a3a3a3;
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.04);
+      }
+      .card-title {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 6px;
+      }
+      .card-desc {
+        font-size: 13px;
+        color: #525252;
+        line-height: 1.5;
+      }
+      .card-path {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 12px;
+        color: #737373;
+        white-space: nowrap;
+      }
+      footer {
+        margin-top: 56px;
+        font-size: 12px;
+        color: #a3a3a3;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="container">
+      <header>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12.00 2.00L12.00 22.00M12.00 2.00L21.50 16.50M12.00 2.00L2.50 16.50M2.50 16.50L12.00 22.00L21.50 16.50" />
+        </svg>
+        <div>
+          <h1>lxx-003 · 静态页面汇总</h1>
+          <p class="subtitle">单文件 HTML 与前端交互实验索引，按子目录持续追加。</p>
+        </div>
+      </header>
+
+      <section class="list">
+        <a class="card" href="./interface-notes/">
+          <div>
+            <div class="card-title">界面手记</div>
+            <div class="card-desc">极简纸面排版博客原型：交替圆图列表、目录导航与物理交互演示。</div>
+          </div>
+          <span class="card-path">/interface-notes/ →</span>
+        </a>
+      </section>
+
+      <footer>Hosted on GitHub Pages · lxx-003.github.io</footer>
+    </main>
+  </body>
+</html>
