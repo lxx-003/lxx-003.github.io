@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>归档 · lxx-003</title>
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='1' y='1' width='22' height='22' rx='6' fill='%23171717'/%3E%3Cpath d='M7.5 6.5h5.5L16.5 10v7.5a1 1 0 0 1-1 1h-8a1 1 0 0 1-1-1v-10a1 1 0 0 1 1-1Z' fill='none' stroke='%23ffffff' stroke-width='1.7' stroke-linejoin='round'/%3E%3Cpath d='M13 6.5V10h3.5M9.5 13h5M9.5 15.5h3.5' fill='none' stroke='%23ffffff' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"
+    />
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f5f5f5;
+        --border: #e5e5e5;
+        --text: #171717;
+        --sub: #525252;
+        --muted: #737373;
+        --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      }
+      * { box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: var(--bg);
+        color: var(--text);
+        font-family: Inter, -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+        -webkit-font-smoothing: antialiased;
+        line-height: 1.65;
+      }
+      .container { max-width: 1040px; margin: 0 auto; padding: 40px 24px 88px; }
+      .topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 24px; font-size: 13px; color: var(--muted); }
+      .crumbs { display: flex; align-items: center; gap: 8px; }
+      .topbar a { color: var(--sub); text-decoration: none; }
+      .topbar a:hover { color: var(--text); }
+      .raw-link { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--border); background: rgba(255, 255, 255, 0.88); font-family: var(--mono); font-size: 12px; }
+      .raw-link[hidden] { display: none; }
+      .raw-link:hover { border-color: #a3a3a3; }
+
+      .paper { background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 40px 48px 48px; box-shadow: 0 2px 12px rgba(0, 0, 0, 0.025); }
+      .doc-title { font-size: 26px; line-height: 1.3; font-weight: 700; letter-spacing: -0.015em; margin: 0 0 12px; }
+      .doc-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin-bottom: 24px; padding-bottom: 18px; border-bottom: 1px solid var(--border); font-size: 12px; color: var(--muted); font-family: var(--mono); }
+      .badge { padding: 2px 8px; border-radius: 999px; background: #f5f5f5; border: 1px solid var(--border); color: var(--sub); }
+
+      .toc { margin: 0 0 28px; padding: 14px 18px; border-radius: 10px; background: #fafafa; border: 1px solid #eee; }
+      .toc-title { font-size: 12px; font-weight: 600; color: var(--muted); letter-spacing: 0.04em; margin-bottom: 8px; }
+      .toc ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; }
+      .toc a { font-size: 13px; color: var(--sub); text-decoration: none; }
+      .toc a:hover { color: var(--text); text-decoration: underline; text-underline-offset: 3px; }
+      .toc li.toc-h3 { padding-left: 16px; }
+
+      .md > *:first-child { margin-top: 0; }
+      .md h2 { font-size: 19px; margin: 32px 0 12px; padding-bottom: 8px; border-bottom: 1px solid #efefef; scroll-margin-top: 24px; }
+      .md h3 { font-size: 16px; margin: 22px 0 10px; scroll-margin-top: 24px; }
+      .md p, .md ul, .md ol { margin: 0 0 14px; font-size: 15px; color: #262626; }
+      .md ul, .md ol { padding-left: 22px; }
+      .md li { margin: 5px 0; }
+      .md li > ul, .md li > ol { margin: 6px 0 4px; }
+      .md blockquote { margin: 16px 0; padding: 12px 16px; border-left: 3px solid #d4d4d4; background: #fafafa; border-radius: 0 8px 8px 0; color: var(--sub); }
+      .md blockquote > *:last-child { margin-bottom: 0; }
+      .md hr { border: 0; border-top: 1px solid var(--border); margin: 28px 0; }
+      .md code { font-family: var(--mono); font-size: 0.87em; background: #f0f0f0; padding: 2px 5px; border-radius: 5px; }
+      .md pre { margin: 16px 0; padding: 14px 16px; border-radius: 10px; background: #171717; color: #f5f5f5; overflow-x: auto; font-size: 13px; line-height: 1.55; }
+      .md pre code { background: transparent; padding: 0; color: inherit; }
+      .md .table-wrap { margin: 16px 0; overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; }
+      .md table { width: 100%; border-collapse: collapse; font-size: 12.5px; line-height: 1.45; }
+      .md th, .md td { padding: 8px 9px; border-bottom: 1px solid #eee; vertical-align: top; }
+      .md th { background: #fafafa; font-weight: 600; white-space: nowrap; }
+      .md tr:last-child td { border-bottom: 0; }
+      .md a { color: var(--text); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: #a3a3a3; }
+      .md a:hover { text-decoration-color: var(--text); }
+      .math { font-family: Georgia, "Times New Roman", serif; font-style: italic; padding: 0 2px; }
+
+      .dir-head { margin-bottom: 24px; }
+      .dir-head h1 { margin: 0; font-size: 22px; font-weight: 600; }
+      .dir-head p { margin: 6px 0 0; font-size: 13.5px; color: var(--muted); }
+      .doc-list { display: grid; gap: 12px; }
+      .doc-card { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 18px 20px; border-radius: 12px; border: 1px solid var(--border); background: rgba(255, 255, 255, 0.84); text-decoration: none; color: inherit; transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s; }
+      .doc-card:hover { border-color: #a3a3a3; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0, 0, 0, 0.04); }
+      .doc-card-title { font-size: 15.5px; font-weight: 600; margin-bottom: 5px; }
+      .doc-card-desc { font-size: 13px; color: var(--sub); line-height: 1.5; }
+      .doc-card-meta { display: flex; align-items: center; gap: 10px; flex-shrink: 0; padding-top: 2px; }
+      .doc-tag { font-size: 11.5px; color: var(--sub); background: #f5f5f5; border: 1px solid var(--border); border-radius: 999px; padding: 2px 8px; }
+      .doc-date { font-family: var(--mono); font-size: 12px; color: var(--muted); white-space: nowrap; }
+
+      @media (max-width: 640px) {
+        .container { padding: 24px 14px 64px; }
+        .paper { padding: 24px 18px 32px; border-radius: 12px; }
+        .doc-title { font-size: 22px; }
+        .doc-card { flex-direction: column; gap: 8px; }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="container">
+      <nav class="topbar">
+        <div class="crumbs">
+          <a href="../">← lxx-003</a>
+          <span style="color:#a3a3a3">/</span>
+          <a href="./">归档</a>
+        </div>
+        <a id="raw-link" class="raw-link" hidden target="_blank" rel="noopener">Raw .md ↗</a>
+      </nav>
+      <div id="app"><div class="paper"><p style="color:#737373;margin:0">加载中…</p></div></div>
+    </main>
+
+    <script>
+      const DOCS = [
+        {
+          kind: "md",
+          category: "验证",
+          file: "DeepSeek-flash耗时与思考控制实测报告.md",
+          title: "DeepSeek-flash 耗时、max_tokens 与思考控制实测报告",
+          createdAt: "2026-11-15",
+          summary: "max_tokens / effort 实测结论：关思考 ~8s，effort=low ~40s；开思考预算与正文共用。",
+        },
+        {
+          kind: "html",
+          category: "验证",
+          href: "./ui-proto/",
+          title: "界面手记 · 极简排版交互原型",
+          createdAt: "2026-11-14",
+          summary: "纸面排版博客原型：交替圆图列表、目录导航与物理交互演示。",
+        },
+      ];
+
+      const esc = (s) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+      function loadMarked() {
+        if (window.marked) return Promise.resolve(window.marked);
+        const urls = ["https://cdn.jsdelivr.net/npm/marked/marked.min.js", "https://unpkg.com/marked/marked.min.js"];
+        return urls.reduce((p, src) => p.catch(() => new Promise((res, rej) => {
+          const s = document.createElement("script");
+          s.src = src;
+          s.onload = () => (window.marked ? res(window.marked) : rej());
+          s.onerror = rej;
+          document.head.appendChild(s);
+        })), Promise.reject());
+      }
+
+      function renderDirectory() {
+        document.title = "归档 · lxx-003";
+        document.getElementById("app").innerHTML = `
+          <section class="dir-head"><h1>归档目录</h1><p>全部验证产物与思考记录，含交互页面与 Markdown 文档。</p></section>
+          <section class="doc-list">
+            ${DOCS.map((d) => `
+              <a class="doc-card" href="${esc(d.kind === "html" ? d.href : `?doc=${encodeURIComponent(d.file)}`)}">
+                <div>
+                  <div class="doc-card-title">${esc(d.title)}</div>
+                  <div class="doc-card-desc">${esc(d.summary)}</div>
+                </div>
+                <div class="doc-card-meta">
+                  ${d.category ? `<span class="doc-tag">${esc(d.category)}</span>` : ""}
+                  <span class="doc-date">${esc(d.createdAt)}</span>
+                </div>
+              </a>
+            `).join("")}
+          </section>`;
+      }
+
+      async function renderDoc(fileName) {
+        const app = document.getElementById("app");
+        const rawLink = document.getElementById("raw-link");
+        const path = "./" + fileName.replace(/^(\.\.?\/)+/, "");
+        rawLink.href = path;
+        rawLink.hidden = false;
+
+        try {
+          const [res, marked] = await Promise.all([fetch(path), loadMarked()]);
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const rawMd = await res.text();
+          const meta = DOCS.find((d) => d.file === fileName);
+          const h1 = rawMd.match(/^#\s+(.+)$/m);
+          const title = meta?.title || (h1 ? h1[1].trim() : fileName);
+          const bodyMd = h1 ? rawMd.replace(/^#\s+.+\r?\n+/, "") : rawMd;
+          const chars = rawMd.replace(/\s+/g, "").length;
+          document.title = `${title} · lxx-003`;
+
+          app.innerHTML = `
+            <article class="paper">
+              <h1 class="doc-title">${esc(title)}</h1>
+              <div class="doc-meta">
+                ${meta?.createdAt ? `<span class="badge">创建于 ${esc(meta.createdAt)}</span>` : ""}
+                <span>约 ${chars.toLocaleString()} 字</span>
+                <span>预计阅读 ${Math.max(1, Math.round(chars / 450))} 分钟</span>
+              </div>
+              <div class="md" id="md-body">${marked.parse(bodyMd, { gfm: true })}</div>
+            </article>`;
+
+          const body = document.getElementById("md-body");
+          body.querySelectorAll("table").forEach((t) => {
+            const wrap = document.createElement("div");
+            wrap.className = "table-wrap";
+            t.parentNode.insertBefore(wrap, t);
+            wrap.appendChild(t);
+          });
+          body.querySelectorAll("p, li, strong, em, td, th").forEach((el) => {
+            [...el.childNodes].forEach((n) => {
+              if (n.nodeType === 3 && n.nodeValue.includes("$")) {
+                const span = document.createElement("span");
+                span.innerHTML = esc(n.nodeValue).replace(/\$([^$\n]+)\$/g, (_, m) => `<span class="math">${m.replace(/\^2/g, "²")}</span>`);
+                n.replaceWith(...span.childNodes);
+              }
+            });
+          });
+
+          const headings = [...body.querySelectorAll("h2, h3")].map((h, idx) => {
+            h.id = h.id || `s-${idx + 1}`;
+            return { level: h.tagName === "H3" ? 3 : 2, id: h.id, text: h.textContent };
+          });
+          if (headings.length >= 3) {
+            const toc = document.createElement("nav");
+            toc.className = "toc";
+            toc.innerHTML = `<div class="toc-title">目录</div><ul>${headings.map((h) => `<li class="toc-h${h.level}"><a href="#${h.id}">${esc(h.text)}</a></li>`).join("")}</ul>`;
+            body.parentNode.insertBefore(toc, body);
+          }
+        } catch (err) {
+          app.innerHTML = `<div class="paper"><p style="color:#737373;margin:0">无法加载文档 <code>${esc(fileName)}</code>（${esc(err.message)}）。<a href="./">返回目录</a></p></div>`;
+        }
+      }
+
+      const doc = new URLSearchParams(location.search).get("doc");
+      doc ? renderDoc(doc) : renderDirectory();
+    </script>
+  </body>
+</html>

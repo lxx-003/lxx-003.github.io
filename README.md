@@ -1,24 +1,25 @@
 # lxx-003.github.io
 
-静态网页 / HTML Demo / 公开笔记汇总仓库，由 GitHub Pages 自动托管。
+个人验证产物与思考归档仓库，由 GitHub Pages 自动托管。
 
 ## 目录约定
 
-- `<slug>/index.html`：可访问的静态子站
-- `docs/`：自包含 Markdown 笔记（先平铺；展示页后续再做）
+所有内容统一存放在 `docs/`，不再按格式拆散在根目录：
 
-## 如何新增页面
+- `docs/<slug>/index.html`：独立 HTML 产物 / 原型 / 思考页面
+- `docs/<name>.md`：自包含 Markdown 笔记与实测报告
+- `docs/index.html`：归档目录与 Markdown 阅读页（`?doc=<name>.md`）
+- `index.html`：首页入口，按内容性质（`验证` / `思考`）与创建日期展示
 
-1. 新建一个英文短名子目录，例如 `my-demo/`，把你的页面放进去并命名为 `index.html`；
-2. 在根目录 `index.html` 中按需补充一条入口链接；
-3. 提交并推送到 `main` 分支后，即可通过 `https://lxx-003.github.io/my-demo/` 访问。
+## 如何新增内容
+
+1. 放入 `docs/`：
+   - 若为 HTML：`docs/<slug>/index.html`
+   - 若为 Markdown：`docs/<name>.md`
+2. 在根目录 `index.html` 与 `docs/index.html`（`DOCS` 列表）补充条目、性质标签与创建日期；
+3. 提交并推送到 `main` 分支即可访问。
 
 ## 已收录
 
-### 页面
-
-- [`/interface-notes/`](./interface-notes/) — 界面手记（静态单文件版）
-
-### 文档（`docs/`）
-
-- [`docs/DeepSeek-flash耗时与思考控制实测报告.md`](./docs/DeepSeek-flash耗时与思考控制实测报告.md) — DeepSeek-flash 耗时 / max_tokens / effort 实测
+- **2026-11-15 · 验证** — [`DeepSeek-flash 耗时与思考控制实测报告`](./docs/DeepSeek-flash耗时与思考控制实测报告.md)
+- **2026-11-14 · 验证** — [`界面手记 · 极简排版交互原型`](./docs/ui-proto/)
