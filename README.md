@@ -1,6 +1,11 @@
 # lxx-003.github.io
 
-静态网页 / HTML Demo 汇总仓库，由 GitHub Pages 自动托管。
+静态网页 / HTML Demo / 公开笔记汇总仓库，由 GitHub Pages 自动托管。
+
+## 目录约定
+
+- `<slug>/index.html`：可访问的静态子站
+- `docs/`：自包含 Markdown 笔记（先平铺；展示页后续再做）
 
 ## 如何新增页面
 
@@ -10,4 +15,10 @@
 
 ## 已收录
 
+### 页面
+
 - [`/interface-notes/`](./interface-notes/) — 界面手记（静态单文件版）
+
+### 文档（`docs/`）
+
+- [`docs/DeepSeek-flash耗时与思考控制实测报告.md`](./docs/DeepSeek-flash耗时与思考控制实测报告.md) — DeepSeek-flash 耗时 / max_tokens / effort 实测
