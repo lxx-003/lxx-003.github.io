@@ -111,6 +111,7 @@
         {
           kind: "md",
           category: "验证",
+          online: false,
           file: "Jev分析手机图片-执行报告.md",
           title: "用 Jev 从手机相册批量筛简历实测报告",
           createdAt: "2026-11-21",
@@ -150,10 +151,11 @@
 
       function renderDirectory() {
         document.title = "归档 · lxx-003";
+        const visibleDocs = DOCS.filter((d) => d.online !== false);
         document.getElementById("app").innerHTML = `
           <section class="dir-head"><h1>归档目录</h1><p>全部验证产物与思考记录，含交互页面与 Markdown 文档。</p></section>
           <section class="doc-list">
-            ${DOCS.map((d) => `
+            ${visibleDocs.map((d) => `
               <a class="doc-card" href="${esc(d.kind === "html" ? d.href : `?doc=${encodeURIComponent(d.file)}`)}">
                 <div>
                   <div class="doc-card-title">${esc(d.title)}</div>
@@ -171,7 +173,15 @@
       async function renderDoc(fileName) {
         const app = document.getElementById("app");
         const rawLink = document.getElementById("raw-link");
-        const path = "./" + fileName.replace(/^(\.\.?\/)+/, "");
+        const cleanName = fileName.replace(/^(\.\.?\/)+/, "");
+        const meta = DOCS.find((d) => d.file === cleanName);
+        if (meta?.online === false) {
+          rawLink.hidden = true;
+          document.title = "暂未开放 · lxx-003";
+          app.innerHTML = `<div class="paper"><p style="color:#737373;margin:0">该文档已暂时下线。<a href="./">返回目录</a></p></div>`;
+          return;
+        }
+        const path = "./" + cleanName;
         rawLink.href = path;
         rawLink.hidden = false;
 
@@ -179,7 +189,6 @@
           const [res, marked] = await Promise.all([fetch(path), loadMarked()]);
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
           const rawMd = await res.text();
-          const meta = DOCS.find((d) => d.file === fileName);
           const h1 = rawMd.match(/^#\s+(.+)$/m);
           const title = meta?.title || (h1 ? h1[1].trim() : fileName);
           const bodyMd = h1 ? rawMd.replace(/^#\s+.+\r?\n+/, "") : rawMd;
