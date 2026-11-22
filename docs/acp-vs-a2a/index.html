@@ -1,0 +1,2201 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ACP vs A2A — 协议时序交互对照</title>
+<style>
+  :root {
+    --bg: #f5f4f0;
+    --surface: #ffffff;
+    --surface-subtle: #faf9f6;
+    --surface-hover: #f3f2ed;
+    --ink: #16181d;
+    --ink-2: #3d424c;
+    --ink-3: #555b66;
+    --line: #e3e1da;
+    --line-strong: #cfccc3;
+
+    --acp: #1d5fd6;
+    --acp-deep: #15459e;
+    --acp-soft: #eef4ff;
+    --acp-border: #c5d9fc;
+
+    --a2a: #c6472c;
+    --a2a-deep: #96321d;
+    --a2a-soft: #fdf1ee;
+    --a2a-border: #f3c8be;
+
+    --human: #a65d08;
+    --human-soft: #fef6e9;
+    --human-border: #f0d29c;
+
+    --code-bg: #171a21;
+    --code-surface: #1f232d;
+    --code-border: #2c313f;
+    --code-text: #dce1eb;
+    --code-muted: #7f8799;
+
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+
+    --sans: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  }
+
+  * { box-sizing: border-box; }
+
+  ::selection {
+    background: color-mix(in srgb, var(--acp) 20%, transparent);
+    color: var(--ink);
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 14px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    font-variant-numeric: tabular-nums;
+  }
+
+  button {
+    font-family: inherit;
+    color: inherit;
+  }
+
+  button:focus-visible,
+  [tabindex]:focus-visible {
+    outline: 2px solid var(--acp);
+    outline-offset: 2px;
+  }
+
+  /* Custom scrollbars */
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #cfccc3; border-radius: 999px; }
+  .code-scroll::-webkit-scrollbar-thumb { background: #3b4254; }
+
+  /* ── Top bar ── */
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    background: rgba(245, 244, 240, 0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .topbar-inner {
+    max-width: 1720px;
+    margin: 0 auto;
+    padding: 14px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+
+  .brand {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+  }
+
+  .brand-row {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .brand h1 {
+    margin: 0;
+    font-size: 19px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+  }
+
+  .task-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12.5px;
+    line-height: 1.35;
+    color: var(--ink-2);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 5px 12px;
+  }
+
+  .task-pill strong {
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  .brand-hint {
+    margin: 0;
+    font-size: 12.5px;
+    color: var(--ink-3);
+  }
+
+  .brand-hint kbd {
+    font-family: var(--mono);
+    font-size: 11px;
+    background: var(--surface);
+    border: 1px solid var(--line-strong);
+    border-bottom-width: 2px;
+    border-radius: 4px;
+    padding: 0 5px;
+    color: var(--ink-2);
+  }
+
+  /* Mode switcher */
+  .tabs {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 4px;
+    background: #e9e7e0;
+    border-radius: 999px;
+    flex-shrink: 0;
+  }
+
+  .tabs button {
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 7px 14px;
+    border-radius: 999px;
+    color: var(--ink-2);
+    transition: background 0.16s ease, color 0.16s ease, box-shadow 0.16s ease;
+    white-space: nowrap;
+  }
+
+  .tabs button:hover:not(.on) {
+    color: var(--ink);
+  }
+
+  .tabs button .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .tabs button[data-tab="acp"] .dot { background: var(--acp); }
+  .tabs button[data-tab="a2a"] .dot { background: var(--a2a); }
+  .tabs button[data-tab="compare"] .dot {
+    background: linear-gradient(135deg, var(--acp) 50%, var(--a2a) 50%);
+  }
+
+  .tabs button.on {
+    background: var(--surface);
+    color: var(--ink);
+    box-shadow: 0 1px 3px rgba(22, 24, 29, 0.1);
+  }
+
+  /* ── Main container ── */
+  main {
+    max-width: 1720px;
+    margin: 0 auto;
+    padding: 24px 28px 80px;
+  }
+
+  /* ── Protocol view shell ── */
+  .proto-view {
+    --accent: var(--acp);
+    --accent-deep: var(--acp-deep);
+    --accent-soft: var(--acp-soft);
+    --accent-border: var(--acp-border);
+  }
+
+  .proto-view.a2a {
+    --accent: var(--a2a);
+    --accent-deep: var(--a2a-deep);
+    --accent-soft: var(--a2a-soft);
+    --accent-border: var(--a2a-border);
+  }
+
+  .proto-view[hidden],
+  .compare-view[hidden] {
+    display: none;
+  }
+
+  /* Intro banner (mental model) */
+  .intro-strip {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    padding: 18px 22px;
+    margin-bottom: 20px;
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(260px, 1fr);
+    gap: 20px;
+    align-items: center;
+  }
+
+  .intro-main {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .intro-title-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .proto-badge {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--accent-deep);
+    background: var(--accent-soft);
+    border: 1px solid var(--accent-border);
+    padding: 2px 9px;
+    border-radius: 6px;
+  }
+
+  .intro-main h2 {
+    margin: 0;
+    font-size: 19px;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+  }
+
+  .intro-meta {
+    font-size: 12.5px;
+    color: var(--ink-3);
+    font-family: var(--mono);
+  }
+
+  .mental-model {
+    margin: 4px 0 0;
+    font-size: 14px;
+    color: var(--ink-2);
+    line-height: 1.65;
+  }
+
+  .mental-model strong {
+    color: var(--ink);
+    font-weight: 650;
+  }
+
+  .intro-facts {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 14px;
+    padding-left: 20px;
+    border-left: 1px solid var(--line);
+  }
+
+  .fact {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+
+  .fact-label {
+    font-size: 11.5px;
+    color: var(--ink-3);
+  }
+
+  .fact-val {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  /* ── Two-column workspace ── */
+  .workspace {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(400px, 480px);
+    gap: 24px;
+    align-items: start;
+  }
+
+  /* ── Left: Sequence board ── */
+  .seq-board {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    overflow: clip;
+  }
+
+  /* Stepper toolbar */
+  .seq-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--line);
+    background: var(--surface-subtle);
+    flex-wrap: wrap;
+  }
+
+  .legend-inline {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-size: 12px;
+    color: var(--ink-3);
+    flex-wrap: wrap;
+  }
+
+  .legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .legend-line {
+    width: 18px;
+    height: 0;
+    border-top: 2px solid var(--accent);
+    display: inline-block;
+  }
+
+  .legend-line.dashed {
+    border-top-style: dashed;
+    border-top-color: var(--ink-3);
+  }
+
+  .legend-line.human {
+    border-top-color: var(--human);
+  }
+
+  .stepper {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .step-btn {
+    border: 1px solid var(--line-strong);
+    background: var(--surface);
+    border-radius: var(--radius-sm);
+    padding: 4px 10px;
+    font-size: 12.5px;
+    font-weight: 550;
+    color: var(--ink-2);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: background 0.14s ease, border-color 0.14s ease, color 0.14s ease;
+  }
+
+  .step-btn:hover:not(:disabled) {
+    background: var(--surface-hover);
+    border-color: var(--accent);
+    color: var(--ink);
+  }
+
+  .step-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .step-counter {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--ink-3);
+    min-width: 56px;
+    text-align: center;
+  }
+
+  /* Swimlane header */
+  .lane-header {
+    position: sticky;
+    top: 84px;
+    z-index: 15;
+    display: grid;
+    grid-template-columns: 124px 1fr 124px;
+    align-items: center;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .actor-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 7px 10px;
+    border-radius: 10px;
+    background: var(--surface-subtle);
+    border: 1px solid var(--line);
+  }
+
+  .actor-box.agent {
+    background: var(--accent-soft);
+    border-color: var(--accent-border);
+  }
+
+  .actor-name {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--ink);
+    line-height: 1.25;
+  }
+
+  .actor-box.agent .actor-name {
+    color: var(--accent-deep);
+  }
+
+  .actor-role {
+    font-size: 11px;
+    color: var(--ink-3);
+    margin-top: 1px;
+  }
+
+  .actor-box.agent .actor-role {
+    color: color-mix(in srgb, var(--accent-deep) 78%, transparent);
+  }
+
+  .lane-mid-hint {
+    text-align: center;
+    font-size: 11.5px;
+    color: var(--ink-3);
+  }
+
+  /* Diagram body with continuous vertical rails */
+  .diagram-body {
+    position: relative;
+    padding: 6px 0 18px;
+  }
+
+  .rails {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .rail-line {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 0;
+    border-left: 1.5px dashed #d7d4cb;
+  }
+
+  /* Aligned precisely to center of 124px actor boxes inside 16px horizontal padding: 16 + 62 = 78px */
+  .rail-line.left { left: 78px; }
+  .rail-line.right { right: 78px; }
+
+  /* Phase / section divider */
+  .phase {
+    position: relative;
+    z-index: 2;
+    padding-top: 8px;
+  }
+
+  .phase-header {
+    position: relative;
+    z-index: 3;
+    margin: 10px 16px 6px;
+    padding: 10px 14px;
+    background: var(--surface-subtle);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .phase.branch .phase-header {
+    background: var(--human-soft);
+    border-color: var(--human-border);
+    border-style: dashed;
+  }
+
+  .phase-title-group {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .phase-no {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--accent-deep);
+  }
+
+  .phase.branch .phase-no {
+    color: var(--human);
+  }
+
+  .phase-title {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--ink);
+  }
+
+  .phase-tag {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 1px 7px;
+    border-radius: 999px;
+    color: var(--human);
+    background: rgba(255, 255, 255, 0.78);
+    border: 1px solid var(--human-border);
+  }
+
+  .phase-desc {
+    margin: 0;
+    font-size: 12.5px;
+    color: var(--ink-3);
+  }
+
+  .phase.branch .phase-desc {
+    color: color-mix(in srgb, var(--human) 85%, #222);
+  }
+
+  /* Message step row */
+  .step-row {
+    position: relative;
+    z-index: 2;
+    display: grid;
+    grid-template-columns: 78px minmax(0, 1fr) 78px;
+    align-items: stretch;
+    width: 100%;
+    border: 0;
+    background: transparent;
+    padding: 0;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.14s ease;
+  }
+
+  .step-row:hover .msg-card {
+    border-color: var(--line-strong);
+    box-shadow: 0 2px 8px rgba(22, 24, 29, 0.05);
+  }
+
+  .step-row.paired .msg-card {
+    border-color: var(--accent-border);
+    border-style: dashed;
+    background: color-mix(in srgb, var(--accent-soft) 55%, #fff);
+  }
+
+  .step-row.active .msg-card {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+    box-shadow: 0 2px 10px color-mix(in srgb, var(--accent) 14%, transparent);
+  }
+
+  .step-row.is-human .msg-card {
+    border-color: var(--human-border);
+    background: color-mix(in srgb, var(--human-soft) 65%, #fff);
+  }
+
+  .step-row.is-human.active .msg-card {
+    border-color: var(--human);
+    background: var(--human-soft);
+    box-shadow: 0 2px 10px color-mix(in srgb, var(--human) 16%, transparent);
+  }
+
+  /* Gutter columns on left and right of the corridor */
+  .gutter {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+  }
+
+  .step-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--ink-3);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    width: 24px;
+    height: 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 26px;
+    transition: all 0.14s ease;
+  }
+
+  .step-row.active .step-num {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+
+  .step-row.is-human.active .step-num {
+    background: var(--human);
+    border-color: var(--human);
+  }
+
+  /* Activation bar SVG on right rail for long-running pending turn (ACP R4) */
+  .pending-svg {
+    position: absolute;
+    left: -5px;
+    top: 0;
+    width: 10px;
+    height: 100%;
+    overflow: visible;
+    pointer-events: none;
+  }
+
+  .pending-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--accent-deep);
+    writing-mode: vertical-rl;
+    letter-spacing: 0.06em;
+    margin-left: 26px;
+    opacity: 0.85;
+  }
+
+  /* Center corridor between the two lifelines: card + arrow inline */
+  .corridor {
+    display: flex;
+    align-items: center;
+    padding: 7px 0;
+    min-width: 0;
+  }
+
+  .step-row.dir-left .corridor {
+    flex-direction: row-reverse;
+  }
+
+  /* Short stem connecting origin lifeline to message card */
+  .stem {
+    position: relative;
+    flex: 0 0 18px;
+    height: 14px;
+    display: flex;
+    align-items: center;
+  }
+
+  /* Flexible arrow segment from message card to target lifeline */
+  .arrow-seg {
+    position: relative;
+    flex: 1 1 56px;
+    min-width: 48px;
+    height: 14px;
+    display: flex;
+    align-items: center;
+  }
+
+  .wire-svg {
+    width: 100%;
+    height: 14px;
+    display: block;
+    overflow: visible;
+  }
+
+  /* Unified message card grouping method, tags and plain-Chinese explanation */
+  .msg-card {
+    flex: 0 1 auto;
+    max-width: 68%;
+    min-width: 260px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 11px;
+    padding: 10px 14px 11px;
+    transition: border-color 0.14s ease, background 0.14s ease, box-shadow 0.14s ease;
+    text-align: left;
+  }
+
+  .card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .card-head-main {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    flex-wrap: wrap;
+    min-width: 0;
+  }
+
+  .pair-chip {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 4px;
+    color: var(--accent-deep);
+    background: var(--accent-soft);
+    border: 1px solid var(--accent-border);
+    white-space: nowrap;
+  }
+
+  .pair-chip.res {
+    color: var(--ink-2);
+    background: var(--surface-subtle);
+    border-color: var(--line-strong);
+  }
+
+  .step-row.is-human .pair-chip {
+    color: var(--human);
+    background: var(--human-soft);
+    border-color: var(--human-border);
+  }
+
+  .method-name {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--ink);
+    word-break: break-word;
+  }
+
+  .kind-tag {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: var(--surface-subtle);
+    color: var(--ink-2);
+    border: 1px solid var(--line);
+    white-space: nowrap;
+  }
+
+  .kind-tag.req {
+    color: var(--accent-deep);
+    background: var(--accent-soft);
+    border-color: var(--accent-border);
+  }
+
+  .kind-tag.human {
+    color: var(--human);
+    background: var(--human-soft);
+    border-color: var(--human-border);
+  }
+
+  .active-pill {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    font-weight: 600;
+    color: #fff;
+    background: var(--accent);
+    padding: 1px 7px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+
+  .step-row.is-human .active-pill {
+    background: var(--human);
+  }
+
+  .card-summary {
+    margin: 5px 0 0;
+    font-size: 13.5px;
+    line-height: 1.55;
+    color: var(--ink-2);
+  }
+
+  .step-row.active .card-summary {
+    color: var(--ink);
+  }
+
+  .step-note-sub {
+    margin: 3px 14px 0;
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--ink-3);
+  }
+
+  /* Mobile inline JSON drawer (hidden on desktop) */
+  .inline-inspector {
+    display: none;
+    margin: 0 14px 12px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--code-border);
+    background: var(--code-bg);
+    color: var(--code-text);
+    overflow: hidden;
+  }
+
+  .board-footer {
+    margin: 8px 16px 0;
+    padding: 12px 14px;
+    background: var(--surface-subtle);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    font-size: 13px;
+    color: var(--ink-2);
+  }
+
+  .board-footer strong {
+    color: var(--ink);
+  }
+
+  /* ── Right: Sticky Inspector ── */
+  .inspector {
+    position: sticky;
+    top: 96px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100vh - 112px);
+  }
+
+  .ins-head {
+    padding: 16px 20px 14px;
+    border-bottom: 1px solid var(--line);
+    background: var(--surface-subtle);
+  }
+
+  .ins-route {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 8px;
+    font-size: 12px;
+    color: var(--ink-3);
+  }
+
+  .ins-direction {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+    color: var(--ink-2);
+  }
+
+  .ins-title-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .ins-method {
+    margin: 0;
+    font-family: var(--mono);
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--ink);
+    word-break: break-all;
+  }
+
+  .ins-body {
+    padding: 16px 20px 18px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .ins-explain {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.65;
+    color: var(--ink);
+  }
+
+  .ins-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    background: var(--surface-subtle);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 11px 13px;
+  }
+
+  .ins-fields-title {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--ink-3);
+    margin-bottom: 2px;
+  }
+
+  .field-row {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 8px 10px;
+    align-items: baseline;
+    font-size: 12.5px;
+  }
+
+  .field-key {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--accent-deep);
+    background: var(--accent-soft);
+    padding: 1px 6px;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+
+  .field-desc {
+    color: var(--ink-2);
+  }
+
+  /* JSON viewer box */
+  .code-card {
+    background: var(--code-bg);
+    border: 1px solid var(--code-border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+  }
+
+  .code-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: var(--code-surface);
+    border-bottom: 1px solid var(--code-border);
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--code-muted);
+  }
+
+  .copy-btn {
+    border: 1px solid #383e4f;
+    background: transparent;
+    color: #c5ccd9;
+    font-family: var(--sans);
+    font-size: 11.5px;
+    font-weight: 500;
+    padding: 2px 9px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.14s ease, color 0.14s ease, border-color 0.14s ease;
+  }
+
+  .copy-btn:hover {
+    background: #2b3140;
+    color: #fff;
+  }
+
+  .copy-btn.copied {
+    border-color: #3a8f63;
+    color: #7ee2ab;
+  }
+
+  .code-pre {
+    margin: 0;
+    padding: 13px 14px;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    line-height: 1.65;
+    color: var(--code-text);
+    overflow-x: auto;
+    white-space: pre;
+  }
+
+  .code-line {
+    display: block;
+    padding: 0 4px;
+    margin: 0 -4px;
+    border-radius: 4px;
+  }
+
+  .code-line.hl {
+    background: rgba(110, 168, 254, 0.16);
+  }
+
+  .a2a .code-line.hl {
+    background: rgba(242, 139, 114, 0.16);
+  }
+
+  .tok-key  { color: #8ab4f8; }
+  .tok-str  { color: #8fd19e; }
+  .tok-num  { color: #f5a97f; }
+  .tok-bool { color: #c9a7f5; }
+  .tok-null { color: #c9a7f5; }
+
+  .ins-foot {
+    padding: 12px 20px;
+    border-top: 1px solid var(--line);
+    background: var(--surface-subtle);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .pair-jump {
+    border: 1px solid var(--accent-border);
+    background: var(--accent-soft);
+    color: var(--accent-deep);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 5px 11px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.14s ease;
+  }
+
+  .pair-jump:hover {
+    background: color-mix(in srgb, var(--accent) 16%, #fff);
+  }
+
+  /* ── Compare view (#compare) ── */
+  .compare-view {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+  }
+
+  .matrix-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+  }
+
+  .matrix-head {
+    padding: 16px 22px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .matrix-head h2 {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 700;
+  }
+
+  .matrix-head p {
+    margin: 0;
+    font-size: 13px;
+    color: var(--ink-3);
+  }
+
+  .matrix-wrap {
+    overflow-x: auto;
+  }
+
+  .matrix {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13.5px;
+  }
+
+  .matrix th,
+  .matrix td {
+    padding: 12px 18px;
+    text-align: left;
+    border-bottom: 1px solid var(--line);
+    vertical-align: top;
+  }
+
+  .matrix tr:last-child td { border-bottom: 0; }
+
+  .matrix thead th {
+    background: var(--surface-subtle);
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--ink-2);
+  }
+
+  .matrix thead th.col-acp { color: var(--acp-deep); }
+  .matrix thead th.col-a2a { color: var(--a2a-deep); }
+
+  .matrix td.dim {
+    font-weight: 650;
+    color: var(--ink);
+    width: 150px;
+    white-space: nowrap;
+  }
+
+  .matrix td { color: var(--ink-2); }
+
+  /* Side-by-side stage comparison */
+  .stage-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .stage-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+  }
+
+  .stage-card-head {
+    padding: 14px 20px;
+    background: var(--surface-subtle);
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .stage-card-head h3 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 700;
+  }
+
+  .stage-takeaway {
+    font-size: 13px;
+    color: var(--ink-2);
+  }
+
+  .stage-cols {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .stage-col {
+    padding: 16px 20px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .stage-col:first-child {
+    border-right: 1px solid var(--line);
+  }
+
+  .stage-col-label {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 2px;
+  }
+
+  .stage-col-label.acp { color: var(--acp-deep); }
+  .stage-col-label.a2a { color: var(--a2a-deep); }
+
+  .mini-step {
+    width: 100%;
+    text-align: left;
+    border: 1px solid var(--line);
+    background: var(--surface-subtle);
+    border-radius: 10px;
+    padding: 10px 12px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    transition: border-color 0.14s ease, background 0.14s ease;
+  }
+
+  .mini-step:hover {
+    background: var(--surface);
+    border-color: var(--line-strong);
+  }
+
+  .mini-step.acp:hover { border-color: var(--acp); }
+  .mini-step.a2a:hover { border-color: var(--a2a); }
+
+  .mini-step-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .mini-step-title {
+    display: inline-flex;
+    align-items: flex-start;
+    gap: 6px;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--ink);
+    word-break: break-word;
+  }
+
+  .lane-mid-hint .mobile-text { display: none; }
+
+  .mini-dir {
+    font-size: 11.5px;
+    color: var(--ink-3);
+    font-weight: 600;
+  }
+
+  .mini-step p {
+    margin: 0;
+    font-size: 12.5px;
+    color: var(--ink-2);
+    line-height: 1.5;
+  }
+
+  .empty-note {
+    padding: 14px;
+    border-radius: 10px;
+    border: 1px dashed var(--line-strong);
+    font-size: 13px;
+    color: var(--ink-3);
+    background: var(--surface-subtle);
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 1020px) {
+    .intro-strip {
+      grid-template-columns: 1fr;
+    }
+    .intro-facts {
+      padding-left: 0;
+      padding-top: 14px;
+      border-left: 0;
+      border-top: 1px solid var(--line);
+    }
+    .workspace {
+      grid-template-columns: 1fr;
+    }
+    .inspector {
+      display: none;
+    }
+    .step-row.active + .inline-inspector {
+      display: block;
+    }
+    .lane-mid-hint .desktop-text { display: none; }
+    .lane-mid-hint .mobile-text { display: inline; }
+  }
+
+  @media (max-width: 720px) {
+    .topbar { position: static; }
+    .topbar-inner { padding: 12px 16px; }
+    main { padding: 16px 14px 64px; }
+    .intro-strip { padding: 14px 16px; }
+    .lane-header {
+      position: static;
+      grid-template-columns: 96px 1fr 96px;
+      padding: 10px 10px;
+    }
+    .rail-line.left { left: 58px; }
+    .rail-line.right { right: 58px; }
+    .step-row {
+      grid-template-columns: 58px minmax(0, 1fr) 58px;
+    }
+    .step-num { margin-right: 16px; width: 22px; height: 22px; font-size: 10.5px; }
+    .stem { flex-basis: 10px; }
+    .arrow-seg { min-width: 24px; }
+    .msg-card { max-width: 82%; min-width: 0; padding: 9px 11px; }
+    .pending-label { display: none; }
+    .stage-cols { grid-template-columns: 1fr; }
+    .stage-col:first-child { border-right: 0; border-bottom: 1px solid var(--line); }
+    .tabs { width: 100%; justify-content: space-between; }
+    .tabs button { flex: 1; justify-content: center; padding: 7px 8px; font-size: 12.5px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <div class="brand-row">
+        <h1>ACP vs A2A 时序对照</h1>
+        <span class="task-pill">同一任务：<strong>「查一下今天天气，写成一句话报告」</strong></span>
+      </div>
+      <p class="brand-hint">点击任意箭头行查看白话解读与原始 JSON，可用 <kbd>↑</kbd> <kbd>↓</kbd> 逐步演练</p>
+    </div>
+    <div class="tabs" role="tablist" aria-label="视图切换">
+      <button type="button" data-tab="acp" class="on" role="tab" aria-selected="true"><span class="dot"></span>ACP 本地白盒</button>
+      <button type="button" data-tab="a2a" role="tab" aria-selected="false"><span class="dot"></span>A2A 远程黑盒</button>
+      <button type="button" data-tab="compare" role="tab" aria-selected="false"><span class="dot"></span>同阶段对照</button>
+    </div>
+  </div>
+</header>
+
+<main id="app"></main>
+
+<script>
+const TASK_TEXT = "查一下今天天气，写成一句话报告";
+
+const PROTOCOLS = {
+  acp: {
+    key: "acp",
+    tag: "ACP",
+    name: "Agent Client Protocol",
+    transport: "JSON-RPC 2.0 over stdio · 换行分隔",
+    mentalModel: "<strong>像 IDE 管理一个本地副驾驶</strong>：客户端直接拉起本地 Agent 子进程，双方保持长连接。客户端能实时看见它在调哪个工具、能弹窗审批权限，整轮对话是完全透明的「白盒过程」。",
+    facts: [
+      { label: "通信双方", val: "宿主（IDE / App）↔ 本地子进程" },
+      { label: "过程可见性", val: "白盒（工具调用、审批全可见）" },
+      { label: "会话与发现", val: "无发现步骤，先握手再建 sessionId" },
+      { label: "人工确认", val: "专用反向请求 request_permission" }
+    ],
+    actors: [
+      { name: "Host / Client", role: "IDE / 手机宿主" },
+      { name: "Agent", role: "本地子进程" }
+    ],
+    footnote: "<strong>核心特征：客户端必须看懂过程。</strong>tool_call、plan、审批卡片都是协议一等公民，而不是私有扩展。",
+    sections: [
+      {
+        no: "01",
+        title: "握手与认证",
+        desc: "先交换协议版本、双方能力和登录方式；此时还没有会话。",
+        steps: [
+          {
+            uid: "acp-1", pair: "R1", dir: "right", method: "initialize", kind: "请求", kindType: "req",
+            short: "客户端报版本号、自身能力（能否读写文件、开终端）和身份信息。",
+            why: "建立连接后的第一条消息。客户端告诉 Agent 自己支持哪些宿主能力，以及自己是谁（例如 Zed 0.165）。",
+            fields: [
+              { k: "protocolVersion", d: "协商协议主版本号，这里为 1" },
+              { k: "clientInfo", d: "客户端名称与版本，便于 Agent 做兼容处理" }
+            ],
+            highlightKeys: ["protocolVersion", "clientInfo"],
+            json: { jsonrpc: "2.0", id: 0, method: "initialize", params: { protocolVersion: 1, clientInfo: { name: "Zed", version: "0.165" } } }
+          },
+          {
+            uid: "acp-2", pair: "R1", res: true, dir: "left", method: "result", kind: "响应", kindType: "res",
+            short: "Agent 回报自己支持的能力（如加载历史会话、识图）以及可用的登录方式。",
+            why: "Agent 告知客户端自身能力清单，并给出认证方式列表（如 cursor_login），下一步 authenticate 按此执行。",
+            fields: [
+              { k: "agentCapabilities", d: "声明支持恢复会话、图片与内嵌上下文" },
+              { k: "authMethods", d: "可选认证方案列表，供下一步挑选" }
+            ],
+            highlightKeys: ["agentCapabilities", "authMethods"],
+            json: { jsonrpc: "2.0", id: 0, result: { protocolVersion: 1, agentCapabilities: { loadSession: true, promptCapabilities: { image: true, embeddedContext: true } }, authMethods: [{ id: "cursor_login", name: "Cursor Login" }] } }
+          },
+          {
+            uid: "acp-3", pair: "R2", dir: "right", method: "authenticate", kind: "请求", kindType: "req",
+            short: "按协商好的方式验明身份（成功返回空结果，此处略去空响应帧）。",
+            why: "客户端传入选定的 methodId。像 Cursor 这类本地工具直接复用本机登录态，无需走网页 OAuth；成功只返回空 result，失败才报错。",
+            fields: [
+              { k: "methodId", d: "对应上一步返回的 authMethods[].id" }
+            ],
+            highlightKeys: ["methodId"],
+            json: { jsonrpc: "2.0", id: 1, method: "authenticate", params: { methodId: "cursor_login" } }
+          }
+        ]
+      },
+      {
+        no: "02",
+        title: "建立会话",
+        desc: "绑定工作目录与 MCP 服务器，换取后续所有请求共用的 sessionId。",
+        steps: [
+          {
+            uid: "acp-4", pair: "R3", dir: "right", method: "session/new", kind: "请求", kindType: "req",
+            short: "开启新会话，指定项目工作目录（cwd）和要挂载的 MCP 服务器。",
+            why: "ACP 是面向本地工作区的协议，必须在开会话时明确 Agent 的工作目录和工具环境。",
+            fields: [
+              { k: "cwd", d: "本次会话绑定的本地工作目录" },
+              { k: "mcpServers", d: "附带注入给 Agent 的 MCP 服务列表" }
+            ],
+            highlightKeys: ["cwd", "mcpServers"],
+            json: { jsonrpc: "2.0", id: 2, method: "session/new", params: { cwd: "/home/me/proj", mcpServers: [] } }
+          },
+          {
+            uid: "acp-5", pair: "R3", res: true, dir: "left", method: "result", kind: "响应", kindType: "res",
+            short: "返回唯一 sessionId，后续发消息、取消、恢复会话全靠它定位。",
+            why: "响应非常轻量，只返回一个 sessionId（如 sess-7c1e）。之后同一进程里可以并行维护多个会话。",
+            fields: [
+              { k: "sessionId", d: "会话唯一标识，后续每条消息必带" }
+            ],
+            highlightKeys: ["sessionId"],
+            json: { jsonrpc: "2.0", id: 2, result: { sessionId: "sess-7c1e" } }
+          }
+        ]
+      },
+      {
+        no: "03",
+        title: "一轮对话（R4 挂起整轮）",
+        desc: "session/prompt 发出后不会立刻返回，而是挂起整轮；过程、审批、正文全靠中间通知和反向请求完成，最后才返回停止原因。",
+        steps: [
+          {
+            uid: "acp-6", pair: "R4", dir: "right", method: "session/prompt", kind: "请求（挂起开始）", kindType: "req", pending: "start",
+            short: "提交本轮任务；该请求将一直挂起，直到整轮对话结束才返回最终 result。",
+            why: "注意：这一步的响应里不包含正文！正文和进度会在挂起期间通过 session/update 通知实时推回。",
+            fields: [
+              { k: "sessionId", d: "指定发往哪个会话" },
+              { k: "prompt", d: "本轮用户输入的内容块数组" }
+            ],
+            highlightKeys: ["sessionId", "prompt"],
+            json: { jsonrpc: "2.0", id: 3, method: "session/prompt", params: { sessionId: "sess-7c1e", prompt: [{ type: "text", text: TASK_TEXT }] } }
+          },
+          {
+            uid: "acp-7", dir: "left", method: "session/update", kind: "通知", kindType: "notify", pending: "mid",
+            short: "通知宿主「我准备调工具查天气了」，客户端据此实时渲染进度条或工具卡片。",
+            why: "单向通知（无 JSON-RPC id，不需回复）。Agent 把工具标题、类型和涉及路径透明汇报给宿主，让用户看得见过程。",
+            fields: [
+              { k: "sessionUpdate", d: "更新类型为 tool_call（工具调用状态）" },
+              { k: "status", d: "in_progress 表示正在准备/执行中" }
+            ],
+            highlightKeys: ["sessionUpdate", "toolCallId", "status"],
+            json: { jsonrpc: "2.0", method: "session/update", params: { sessionId: "sess-7c1e", update: { sessionUpdate: "tool_call", toolCallId: "call_1", title: "Fetch weather", kind: "fetch", status: "in_progress", locations: [{ path: "/home/me/proj" }] } } }
+          },
+          {
+            uid: "acp-8", pair: "Q1", dir: "left", method: "session/request_permission", kind: "反向请求", kindType: "human", human: true, pending: "mid",
+            short: "Agent 反过来向客户端请求授权：这次允许、始终允许，还是拒绝执行？",
+            why: "ACP 的标志性能力：由于是双向 JSON-RPC，Agent 可以主动发起带 id 的请求暂停执行，等客户端弹窗让用户拍板。",
+            fields: [
+              { k: "toolCall", d: "待审批的工具调用摘要，用于渲染审批卡片" },
+              { k: "options[].kind", d: "标准动作枚举：allow_once / allow_always / reject_once" }
+            ],
+            highlightKeys: ["method", "options"],
+            json: { jsonrpc: "2.0", id: 9, method: "session/request_permission", params: { sessionId: "sess-7c1e", toolCall: { toolCallId: "call_1", title: "Fetch weather", kind: "fetch" }, options: [{ optionId: "allow-once", name: "Allow once", kind: "allow_once" }, { optionId: "allow-always", name: "Always allow", kind: "allow_always" }, { optionId: "reject-once", name: "Reject", kind: "reject_once" }] } }
+          },
+          {
+            uid: "acp-9", pair: "Q1", res: true, dir: "right", method: "result", kind: "授权响应", kindType: "human", human: true, pending: "mid",
+            short: "客户端把用户点击的选项（allow-once）回传给 Agent，工具随即放行执行。",
+            why: "与 Q1（id: 9）配对的响应。Agent 收到明确答复后才真正调用工具；若用户选拒绝，则跳过该工具。",
+            fields: [
+              { k: "outcome", d: "selected 表示用户已做出选择" },
+              { k: "optionId", d: "选中的选项 ID：allow-once" }
+            ],
+            highlightKeys: ["outcome", "optionId"],
+            json: { jsonrpc: "2.0", id: 9, result: { outcome: { outcome: "selected", optionId: "allow-once" } } }
+          },
+          {
+            uid: "acp-10", dir: "left", method: "session/update", kind: "流式通知", kindType: "notify", pending: "mid",
+            short: "把最终回答的正文按增量片段（chunk）推给客户端，拼起来即完整回复。",
+            why: "同样走 session/update 通知，但类型换成了 agent_message_chunk；实际传输中可能会按字词分多次推送。",
+            fields: [
+              { k: "sessionUpdate", d: "agent_message_chunk 表示回答正文增量" },
+              { k: "content.text", d: "本段生成的文字内容" }
+            ],
+            highlightKeys: ["sessionUpdate", "text"],
+            json: { jsonrpc: "2.0", method: "session/update", params: { sessionId: "sess-7c1e", update: { sessionUpdate: "agent_message_chunk", content: { type: "text", text: "今天晴，最高 24°C。" } } } }
+          },
+          {
+            uid: "acp-11", pair: "R4", res: true, dir: "left", method: "result", kind: "响应（挂起结束）", kindType: "res", pending: "end",
+            short: "对应第 6 步的 R4（id: 3），宣告本轮彻底结束并给出停止原因。",
+            why: "正文已经在前面的通知里推完了，所以最终响应里只有 stopReason（正常结束 / 被取消 / 触及长度上限 / 拒绝）。",
+            fields: [
+              { k: "id: 3", d: "与第 6 步 session/prompt 配对闭合" },
+              { k: "stopReason", d: "end_turn / cancelled / max_tokens / refusal" }
+            ],
+            highlightKeys: ["id", "stopReason"],
+            json: { jsonrpc: "2.0", id: 3, result: { stopReason: "end_turn" } }
+          }
+        ]
+      }
+    ]
+  },
+
+  a2a: {
+    key: "a2a",
+    tag: "A2A",
+    name: "Agent2Agent",
+    transport: "HTTP(S) · 支持 JSON-RPC / gRPC / REST 三种 binding",
+    mentalModel: "<strong>像给外部专业团队发工单外包任务</strong>：先读对方公开名片（AgentCard）确认会干什么，递交任务后立刻拿到 taskId 凭据，之后只收状态和成品，对方内部用了什么工具完全是「黑盒」。",
+    facts: [
+      { label: "通信双方", val: "客户端 Agent ↔ 远程 Agent 服务" },
+      { label: "过程可见性", val: "黑盒（只看状态与成品产物）" },
+      { label: "会话与发现", val: "先 GET AgentCard，靠 taskId / contextId 串联" },
+      { label: "人工确认", val: "无专用权限 RPC，靠状态挂起 + 续发消息" }
+    ],
+    actors: [
+      { name: "Client Agent", role: "任务发起方" },
+      { name: "Remote Agent", role: "远程服务" }
+    ],
+    footnote: "<strong>核心特征：客户端只看状态和产物。</strong>远程 Agent 内部读了哪些文件、跑了什么命令，对外一律不可见。",
+    sections: [
+      {
+        no: "01",
+        title: "能力发现",
+        desc: "跨网络协作前，先拉取对方的公开名片（AgentCard）。ACP 没有这一步——拉起本地命令即可用。",
+        steps: [
+          {
+            uid: "a2a-1", pair: "D1", dir: "right", method: "GET /.well-known/agent-card.json", kind: "发现请求", kindType: "req",
+            short: "按约定路径请求远程 Agent 的自述文件，了解它具备哪些技能与接口。",
+            why: "类似于网站的 robots.txt 或 OpenID 发现文档。调用方在发任务之前，先动态探测远程 Agent 的能力边界与鉴权要求。",
+            fields: [
+              { k: ".well-known/agent-card.json", d: "A2A 约定的标准能力发现路径" }
+            ],
+            highlightKeys: ["url"],
+            json: { method: "GET", url: "https://agent.example.com/.well-known/agent-card.json" }
+          },
+          {
+            uid: "a2a-2", pair: "D1", res: true, dir: "left", method: "AgentCard", kind: "200 响应", kindType: "res",
+            short: "返回接口地址、协议绑定（JSON-RPC）、是否支持流式以及技能清单。",
+            why: "拿到这份名片后，客户端才知道具体往哪个 endpoint 发请求、支不支持流式推送，以及对方能查天气。",
+            fields: [
+              { k: "supportedInterfaces", d: "真实调用 URL 与协议绑定方式（JSONRPC / gRPC / REST）" },
+              { k: "capabilities.streaming", d: "true 表示可以使用流式接口 SendStreamingMessage" },
+              { k: "skills", d: "对外宣称的技能列表，用于路由决策" }
+            ],
+            highlightKeys: ["supportedInterfaces", "streaming", "skills"],
+            json: { name: "Weather Agent", supportedInterfaces: [{ url: "https://agent.example.com/a2a/v1", protocolBinding: "JSONRPC", protocolVersion: "1.0" }], capabilities: { streaming: true, pushNotifications: false }, defaultInputModes: ["text/plain"], defaultOutputModes: ["text/plain"], skills: [{ id: "weather", name: "Weather", description: "查询当前天气", tags: ["weather"] }] }
+          }
+        ]
+      },
+      {
+        no: "02",
+        title: "派发任务",
+        desc: "不共享工作目录或本地工具，只递交一条自然语言消息；先拿任务句柄 taskId。",
+        steps: [
+          {
+            uid: "a2a-3", pair: "R5", dir: "right", method: "SendStreamingMessage", kind: "任务请求", kindType: "req",
+            short: "直接递交用户的一句话消息，请求远程 Agent 流式返回任务进展。",
+            why: "没有提前建 session 的动作。消息体只包含角色、内容 parts 和 messageId；若要多轮对话，后续靠 contextId / taskId 关联。",
+            fields: [
+              { k: "method", d: "SendStreamingMessage 开启流式响应通道" },
+              { k: "message.parts", d: "多模态内容片段，这里是纯文本任务" }
+            ],
+            highlightKeys: ["method", "parts", "messageId"],
+            json: { jsonrpc: "2.0", id: 1, method: "SendStreamingMessage", params: { message: { role: "ROLE_USER", parts: [{ text: "What is the weather today?" }], messageId: "msg-uuid" } } }
+          },
+          {
+            uid: "a2a-4", dir: "left", method: "task", kind: "流 · 句柄", kindType: "notify",
+            short: "立即先回一个任务句柄（taskId + WORKING），长任务此时甚至可以断线。",
+            why: "远程任务可能跑几分钟甚至几小时。先返回 taskId 和 contextId，客户端之后可以断线重连查询、重新订阅，或等 Webhook 推送。",
+            fields: [
+              { k: "task.id", d: "本次任务的全局唯一 ID（task-uuid）" },
+              { k: "status.state", d: "TASK_STATE_WORKING 表示已受理并开始处理" }
+            ],
+            highlightKeys: ["id", "contextId", "state"],
+            json: { task: { id: "task-uuid", contextId: "context-uuid", status: { state: "TASK_STATE_WORKING" } } }
+          }
+        ]
+      },
+      {
+        no: "03",
+        title: "流式返回产物",
+        desc: "只推送成品片段和任务终态，完全隐藏内部调用了什么 API 或思考步骤。",
+        steps: [
+          {
+            uid: "a2a-5", dir: "left", method: "artifactUpdate", kind: "流 · 产物", kindType: "notify",
+            short: "按块追加最终产物（Weather Report），客户端直接拿到结果。",
+            why: "注意与 ACP 的区别：这里推送的是「产物（Artifact）」，而不是工具调用轨迹。append: true 表示向同一产物追加增量内容。",
+            fields: [
+              { k: "artifact.name", d: "产物名称：Weather Report" },
+              { k: "append", d: "true 表示流式追加到已有产物末尾" }
+            ],
+            highlightKeys: ["artifactId", "append", "text"],
+            json: { artifactUpdate: { taskId: "task-uuid", contextId: "context-uuid", artifact: { artifactId: "artifact-uuid", name: "Weather Report", append: true, parts: [{ text: "Today will be sunny with a high of 75°F" }] } } }
+          },
+          {
+            uid: "a2a-6", dir: "left", method: "statusUpdate", kind: "流 · 终态", kindType: "res",
+            short: "推送终态 TASK_STATE_COMPLETED，宣告这条任务圆满结束。",
+            why: "任务生命周期正式完结。如果发生失败（FAILED）或取消（CANCELED），也走同样的 statusUpdate 事件通道。",
+            fields: [
+              { k: "status.state", d: "TASK_STATE_COMPLETED 代表任务完成" }
+            ],
+            highlightKeys: ["state"],
+            json: { statusUpdate: { taskId: "task-uuid", contextId: "context-uuid", status: { state: "TASK_STATE_COMPLETED" } } }
+          }
+        ]
+      },
+      {
+        no: "04",
+        title: "分支场景：中途需要人确认时",
+        branch: true,
+        desc: "注意：以下不是接在「完成」之后，而是任务执行中途需要补充信息/确认时的替代路径。A2A 没有专门的权限 RPC，靠状态挂起 + 带 taskId 续发解决。",
+        steps: [
+          {
+            uid: "a2a-7", pair: "I1", dir: "left", method: "statusUpdate", kind: "状态挂起", kindType: "human", human: true,
+            short: "把任务切成 INPUT_REQUIRED 并附带一句提问，任务暂停在服务端等人答复。",
+            why: "没有像 ACP 那样的反向权限弹窗接口。远程 Agent 只能把状态置为「需要输入」，并在 status.message 里用自然语言提问。",
+            fields: [
+              { k: "status.state", d: "TASK_STATE_INPUT_REQUIRED：任务暂停等待外部输入" },
+              { k: "status.message", d: "远程 Agent 向用户提出的问题文本" }
+            ],
+            highlightKeys: ["state", "text"],
+            json: { statusUpdate: { taskId: "task-uuid", contextId: "context-uuid", status: { state: "TASK_STATE_INPUT_REQUIRED", message: { role: "ROLE_AGENT", parts: [{ text: "Is it OK to read your location?" }] } } } }
+          },
+          {
+            uid: "a2a-8", pair: "I1", res: true, dir: "right", method: "SendMessage", kind: "续发恢复", kindType: "human", human: true,
+            short: "客户端必须带上原来的 taskId 再发一条消息，唤醒同一个任务继续执行。",
+            why: "发送普通 SendMessage 并在 params.message 里填上原 taskId。如果漏带 taskId，服务端会误以为是全新的任务！",
+            fields: [
+              { k: "message.taskId", d: "必填！指向被挂起的原任务（task-uuid）" },
+              { k: "message.parts", d: "用户的答复内容：Yes" }
+            ],
+            highlightKeys: ["taskId", "text"],
+            json: { jsonrpc: "2.0", id: 2, method: "SendMessage", params: { message: { taskId: "task-uuid", role: "ROLE_USER", parts: [{ text: "Yes" }], messageId: "msg-2" } } }
+          }
+        ]
+      }
+    ]
+  }
+};
+
+const COMPARE_MATRIX = [
+  { dim: "定位与关系", acp: "宿主（IDE/手机）控制本地 Agent 子进程", a2a: "一个 Agent 调用远端独立 Agent 服务" },
+  { dim: "传输协议", acp: "stdio 管道上的双向 JSON-RPC 2.0（长连接）", a2a: "HTTP(S)，支持 JSON-RPC / gRPC / REST + SSE 流" },
+  { dim: "如何开始", acp: "本地直接 spawn 启动 → initialize 握手 → session/new 建会话", a2a: "先 GET /.well-known/agent-card.json 读能力名片 → 直接发任务" },
+  { dim: "过程透明度", acp: "白盒：tool_call、文件路径、增量文本全部实时汇报给宿主", a2a: "黑盒：只推 task 状态与 artifact 成品，不暴露内部工具细节" },
+  { dim: "人工确认 / 审批", acp: "专用反向请求 session/request_permission，带结构化选项按钮", a2a: "无专用接口；将任务状态挂起为 INPUT_REQUIRED，靠带 taskId 续发消息" },
+  { dim: "长任务断线", acp: "绑定本地进程生命周期，挂起单轮 session/prompt", a2a: "先返 taskId 句柄，支持断线后按 taskId 轮询、重连或 Webhook" }
+];
+
+const COMPARE_STAGES = [
+  {
+    title: "阶段 1 · 建立连接",
+    takeaway: "ACP 假定你知道要启动哪个本地程序，所以直接握手认证；A2A 面对陌生远程服务，必须先读 AgentCard 名片。",
+    acpUids: ["acp-1", "acp-2", "acp-3", "acp-4", "acp-5"],
+    a2aUids: ["a2a-1", "a2a-2"]
+  },
+  {
+    title: "阶段 2 · 提交任务",
+    takeaway: "ACP 把 prompt 挂在 sessionId 下并一直阻塞等终态；A2A 直接递一句话，立刻拿回 taskId 任务凭据。",
+    acpUids: ["acp-6"],
+    a2aUids: ["a2a-3", "a2a-4"]
+  },
+  {
+    title: "阶段 3 · 过程与结果",
+    takeaway: "核心分水岭：ACP 细粒度广播 tool_call 与文字块（白盒）；A2A 只推送成品 artifact 与状态迁移（黑盒）。",
+    acpUids: ["acp-7", "acp-10", "acp-11"],
+    a2aUids: ["a2a-5", "a2a-6"]
+  },
+  {
+    title: "阶段 4 · 需要人确认时",
+    takeaway: "ACP 有结构化的反向审批 RPC（允许一次/总是/拒绝）；A2A 靠任务状态机切到 INPUT_REQUIRED，再发普通消息续跑。",
+    acpUids: ["acp-8", "acp-9"],
+    a2aUids: ["a2a-7", "a2a-8"]
+  }
+];
+
+/* Flatten steps for fast lookup & navigation */
+const FLAT = {};
+const STEP_BY_UID = {};
+
+Object.values(PROTOCOLS).forEach((p) => {
+  const list = [];
+  p.sections.forEach((sec) => {
+    sec.steps.forEach((st) => {
+      const enriched = { ...st, protoKey: p.key, sectionNo: sec.no, sectionTitle: sec.title, idx: list.length + 1 };
+      list.push(enriched);
+      STEP_BY_UID[st.uid] = enriched;
+    });
+  });
+  FLAT[p.key] = list;
+});
+
+const state = {
+  tab: "acp",
+  selected: {
+    acp: "acp-1",
+    a2a: "a2a-1"
+  },
+  compareUid: "acp-8"
+};
+
+function esc(s) {
+  return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function highlightJsonLines(obj, highlightKeys = []) {
+  const raw = JSON.stringify(obj, null, 2);
+  const keySet = new Set(highlightKeys);
+  return raw.split("\n").map((line) => {
+    let isHl = false;
+    for (const k of keySet) {
+      if (line.includes('"' + k + '":')) {
+        isHl = true;
+        break;
+      }
+    }
+    const colored = esc(line).replace(
+      /("(?:\\u[a-fA-F0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(?:true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g,
+      (m) => {
+        let cls = "tok-num";
+        if (m.startsWith('"')) cls = m.trimEnd().endsWith(":") ? "tok-key" : "tok-str";
+        else if (m === "true" || m === "false") cls = "tok-bool";
+        else if (m === "null") cls = "tok-null";
+        return '<span class="' + cls + '">' + m + "</span>";
+      }
+    );
+    return '<span class="code-line' + (isHl ? " hl" : "") + '">' + colored + "</span>";
+  }).join("");
+}
+
+function pendingSvgHtml(mode) {
+  if (!mode) return "";
+  const fill = "rgba(29, 95, 214, 0.14)";
+  const stroke = "rgba(29, 95, 214, 0.52)";
+  if (mode === "start") {
+    return (
+      '<svg class="pending-svg" viewBox="0 0 10 100" preserveAspectRatio="none" aria-hidden="true">' +
+        '<rect x="1" y="50" width="8" height="50" fill="' + fill + '" />' +
+        '<path d="M1 100 V50 H9 V100" fill="none" stroke="' + stroke + '" stroke-width="1.4" vector-effect="non-scaling-stroke" />' +
+      "</svg>"
+    );
+  }
+  if (mode === "end") {
+    return (
+      '<svg class="pending-svg" viewBox="0 0 10 100" preserveAspectRatio="none" aria-hidden="true">' +
+        '<rect x="1" y="0" width="8" height="50" fill="' + fill + '" />' +
+        '<path d="M1 0 V50 H9 V0" fill="none" stroke="' + stroke + '" stroke-width="1.4" vector-effect="non-scaling-stroke" />' +
+      "</svg>"
+    );
+  }
+  return (
+    '<svg class="pending-svg" viewBox="0 0 10 100" preserveAspectRatio="none" aria-hidden="true">' +
+      '<rect x="1" y="0" width="8" height="100" fill="' + fill + '" />' +
+      '<line x1="1" y1="0" x2="1" y2="100" stroke="' + stroke + '" stroke-width="1.4" vector-effect="non-scaling-stroke" />' +
+      '<line x1="9" y1="0" x2="9" y2="100" stroke="' + stroke + '" stroke-width="1.4" vector-effect="non-scaling-stroke" />' +
+    "</svg>"
+  );
+}
+
+function wireColors(step) {
+  const isDashed = step.kindType === "res" || step.kindType === "notify";
+  const color = step.human ? "var(--human)" : (isDashed ? "var(--ink-2)" : "var(--accent)");
+  return { color, dashAttr: isDashed ? ' stroke-dasharray="5 4"' : "" };
+}
+
+function stemSvgHtml(step) {
+  const { color, dashAttr } = wireColors(step);
+  const dotSide = step.dir === "right" ? "left:-4px" : "right:-4px";
+  return (
+    '<svg class="wire-svg" viewBox="0 0 100 14" preserveAspectRatio="none" aria-hidden="true">' +
+      '<line x1="0" y1="7" x2="100" y2="7" stroke="' + color + '" stroke-width="1.8" vector-effect="non-scaling-stroke"' + dashAttr + ' />' +
+    "</svg>" +
+    '<svg style="position:absolute;' + dotSide + ';top:3px;width:8px;height:8px;overflow:visible" viewBox="0 0 8 8" aria-hidden="true"><circle cx="4" cy="4" r="3.2" fill="' + color + '"/></svg>'
+  );
+}
+
+function arrowSegSvgHtml(step) {
+  const { color, dashAttr } = wireColors(step);
+  if (step.dir === "right") {
+    return (
+      '<svg class="wire-svg" viewBox="0 0 100 14" preserveAspectRatio="none" aria-hidden="true">' +
+        '<line x1="0" y1="7" x2="97" y2="7" stroke="' + color + '" stroke-width="1.8" vector-effect="non-scaling-stroke"' + dashAttr + ' />' +
+      "</svg>" +
+      '<svg style="position:absolute;right:-1px;top:2px;width:10px;height:10px;overflow:visible" viewBox="0 0 10 10" aria-hidden="true"><polygon points="0,1 10,5 0,9" fill="' + color + '"/></svg>'
+    );
+  }
+  return (
+    '<svg class="wire-svg" viewBox="0 0 100 14" preserveAspectRatio="none" aria-hidden="true">' +
+      '<line x1="3" y1="7" x2="100" y2="7" stroke="' + color + '" stroke-width="1.8" vector-effect="non-scaling-stroke"' + dashAttr + ' />' +
+    "</svg>" +
+    '<svg style="position:absolute;left:-1px;top:2px;width:10px;height:10px;overflow:visible" viewBox="0 0 10 10" aria-hidden="true"><polygon points="10,1 0,5 10,9" fill="' + color + '"/></svg>'
+  );
+}
+
+function findPairStep(step) {
+  if (!step.pair) return null;
+  const list = FLAT[step.protoKey];
+  return list.find((s) => s.uid !== step.uid && s.pair === step.pair) || null;
+}
+
+function inspectorInnerHtml(step, options = {}) {
+  const p = PROTOCOLS[step.protoKey];
+  const from = step.dir === "right" ? p.actors[0].name : p.actors[1].name;
+  const to = step.dir === "right" ? p.actors[1].name : p.actors[0].name;
+  const list = FLAT[step.protoKey];
+  const pairTarget = findPairStep(step);
+  const showNav = options.showNav !== false;
+
+  const fieldsHtml = step.fields && step.fields.length
+    ? '<div class="ins-fields">' +
+        '<div class="ins-fields-title">看懂这份 JSON 的关键字段</div>' +
+        step.fields.map((f) =>
+          '<div class="field-row"><span class="field-key">' + esc(f.k) + '</span><span class="field-desc">' + esc(f.d) + "</span></div>"
+        ).join("") +
+      "</div>"
+    : "";
+
+  const pairBtn = pairTarget
+    ? '<button type="button" class="pair-jump" data-jump-uid="' + pairTarget.uid + '">跳到配对的' + (pairTarget.res ? "响应" : "请求") + "（第 " + pairTarget.idx + " 步）</button>"
+    : '<span></span>';
+
+  const navHtml = showNav
+    ? '<div class="ins-foot">' +
+        pairBtn +
+        '<div class="stepper">' +
+          '<button type="button" class="step-btn" data-nav="prev"' + (step.idx <= 1 ? " disabled" : "") + ">← 上一步</button>" +
+          '<button type="button" class="step-btn" data-nav="next"' + (step.idx >= list.length ? " disabled" : "") + ">下一步 →</button>" +
+        "</div>" +
+      "</div>"
+    : "";
+
+  return (
+    '<div class="ins-head">' +
+      '<div class="ins-route">' +
+        '<span>' + esc(p.tag) + " · 第 " + step.idx + " / " + list.length + " 步 · " + esc(step.sectionTitle) + "</span>" +
+        '<span class="ins-direction">' + esc(from) + " → " + esc(to) + "</span>" +
+      "</div>" +
+      '<div class="ins-title-line">' +
+        (step.pair ? '<span class="pair-chip' + (step.res ? " res" : "") + '">' + (step.res ? "↳ " : "") + esc(step.pair) + "</span>" : "") +
+        '<h3 class="ins-method">' + esc(step.method) + "</h3>" +
+        '<span class="kind-tag ' + (step.human ? "human" : (step.kindType === "req" ? "req" : "")) + '">' + esc(step.kind) + "</span>" +
+      "</div>" +
+    "</div>" +
+    '<div class="ins-body">' +
+      '<p class="ins-explain">' + esc(step.why) + "</p>" +
+      fieldsHtml +
+      '<div class="code-card">' +
+        '<div class="code-bar">' +
+          '<span>RAW JSON · 浅亮行为重点字段</span>' +
+          '<button type="button" class="copy-btn" data-copy-uid="' + step.uid + '">复制 JSON</button>' +
+        "</div>" +
+        '<pre class="code-pre code-scroll">' + highlightJsonLines(step.json, step.highlightKeys) + "</pre>" +
+      "</div>" +
+    "</div>" +
+    navHtml
+  );
+}
+
+function inlineMobileInspectorHtml(step) {
+  return (
+    '<div class="inline-inspector">' +
+      '<div class="code-bar">' +
+        '<span>' + esc(step.method) + " · 原始 JSON</span>" +
+        '<button type="button" class="copy-btn" data-copy-uid="' + step.uid + '">复制</button>' +
+      "</div>" +
+      '<div style="padding:10px 14px 4px;font-size:12.5px;color:#c9d1df;line-height:1.55">' + esc(step.why) + "</div>" +
+      '<pre class="code-pre code-scroll">' + highlightJsonLines(step.json, step.highlightKeys) + "</pre>" +
+    "</div>"
+  );
+}
+
+function renderProtocolView(key) {
+  const p = PROTOCOLS[key];
+  const activeUid = state.selected[key];
+  const activeStep = STEP_BY_UID[activeUid];
+  const list = FLAT[key];
+  const pairOfActive = activeStep.pair ? activeStep.pair : null;
+
+  const sectionsHtml = p.sections.map((sec) => {
+    const stepsHtml = sec.steps.map((raw) => {
+      const step = STEP_BY_UID[raw.uid];
+      const isActive = step.uid === activeUid;
+      const isPaired = !isActive && pairOfActive && step.pair === pairOfActive;
+      const classes = [
+        "step-row",
+        step.dir === "left" ? "dir-left" : "dir-right",
+        isActive ? "active" : "",
+        isPaired ? "paired" : "",
+        step.human ? "is-human" : ""
+      ].filter(Boolean).join(" ");
+
+      const pendingSvg = pendingSvgHtml(step.pending);
+      const pendingTag = step.uid === "acp-8" ? '<span class="pending-label">R4 挂起中</span>' : "";
+      const kindCls = step.human ? "human" : (step.kindType === "req" ? "req" : "");
+
+      return (
+        '<button type="button" class="' + classes + '" data-uid="' + step.uid + '" aria-pressed="' + (isActive ? "true" : "false") + '">' +
+          '<div class="gutter left"><span class="step-num">' + step.idx + "</span></div>" +
+          '<div class="corridor">' +
+            '<span class="stem">' + stemSvgHtml(step) + "</span>" +
+            '<div class="msg-card">' +
+              '<div class="card-head">' +
+                '<div class="card-head-main">' +
+                  (step.pair ? '<span class="pair-chip' + (step.res ? " res" : "") + '">' + (step.res ? "↳ " : "") + esc(step.pair) + "</span>" : "") +
+                  '<span class="method-name">' + esc(step.method) + "</span>" +
+                  '<span class="kind-tag ' + kindCls + '">' + esc(step.kind) + "</span>" +
+                "</div>" +
+                (isActive ? '<span class="active-pill">JSON</span>' : "") +
+              "</div>" +
+              '<p class="card-summary">' + esc(step.short) + "</p>" +
+            "</div>" +
+            '<span class="arrow-seg">' + arrowSegSvgHtml(step) + "</span>" +
+          "</div>" +
+          '<div class="gutter right">' + pendingSvg + pendingTag + "</div>" +
+        "</button>" +
+        inlineMobileInspectorHtml(step)
+      );
+    }).join("");
+
+    return (
+      '<section class="phase' + (sec.branch ? " branch" : "") + '">' +
+        '<div class="phase-header">' +
+          '<div class="phase-title-group">' +
+            '<span class="phase-no">' + esc(sec.no) + "</span>" +
+            '<h3 class="phase-title">' + esc(sec.title) + "</h3>" +
+            (sec.branch ? '<span class="phase-tag">可选分支</span>' : "") +
+          "</div>" +
+          '<p class="phase-desc">' + esc(sec.desc) + "</p>" +
+        "</div>" +
+        stepsHtml +
+      "</section>"
+    );
+  }).join("");
+
+  return (
+    '<div class="proto-view ' + key + '" id="view-' + key + '"' + (state.tab !== key ? " hidden" : "") + ">" +
+      '<section class="intro-strip">' +
+        '<div class="intro-main">' +
+          '<div class="intro-title-row">' +
+            '<span class="proto-badge">' + esc(p.tag) + "</span>" +
+            "<h2>" + esc(p.name) + "</h2>" +
+            '<span class="intro-meta">' + esc(p.transport) + "</span>" +
+          "</div>" +
+          '<p class="mental-model">' + p.mentalModel + "</p>" +
+        "</div>" +
+        '<div class="intro-facts">' +
+          p.facts.map((f) => '<div class="fact"><span class="fact-label">' + esc(f.label) + '</span><span class="fact-val">' + esc(f.val) + "</span></div>").join("") +
+        "</div>" +
+      "</section>" +
+      '<div class="workspace">' +
+        '<div class="seq-board">' +
+          '<div class="seq-toolbar">' +
+            '<div class="legend-inline">' +
+              '<span class="legend-item"><span class="legend-line"></span>发起请求</span>' +
+              '<span class="legend-item"><span class="legend-line dashed"></span>响应 / 流式通知</span>' +
+              '<span class="legend-item"><span class="legend-line human"></span>人工确认</span>' +
+            "</div>" +
+            '<div class="stepper">' +
+              '<button type="button" class="step-btn" data-nav="prev" data-proto="' + key + '"' + (activeStep.idx <= 1 ? " disabled" : "") + ">← 上一步</button>" +
+              '<span class="step-counter">' + activeStep.idx + " / " + list.length + "</span>" +
+              '<button type="button" class="step-btn" data-nav="next" data-proto="' + key + '"' + (activeStep.idx >= list.length ? " disabled" : "") + ">下一步 →</button>" +
+            "</div>" +
+          "</div>" +
+          '<div class="lane-header">' +
+            '<div class="actor-box"><span class="actor-name">' + esc(p.actors[0].name) + '</span><span class="actor-role">' + esc(p.actors[0].role) + "</span></div>" +
+            '<div class="lane-mid-hint"><span class="desktop-text">点击任意箭头行，右侧同步显示报文</span><span class="mobile-text">点击任意行展开报文</span></div>' +
+            '<div class="actor-box agent"><span class="actor-name">' + esc(p.actors[1].name) + '</span><span class="actor-role">' + esc(p.actors[1].role) + "</span></div>" +
+          "</div>" +
+          '<div class="diagram-body">' +
+            '<div class="rails"><i class="rail-line left"></i><i class="rail-line right"></i></div>' +
+            sectionsHtml +
+            '<div class="board-footer">' + p.footnote + "</div>" +
+          "</div>" +
+        "</div>" +
+        '<aside class="inspector" aria-label="报文详情检视器">' +
+          inspectorInnerHtml(activeStep) +
+        "</aside>" +
+      "</div>" +
+    "</div>"
+  );
+}
+
+function renderCompareView() {
+  const cStep = STEP_BY_UID[state.compareUid];
+  const isA2a = cStep.protoKey === "a2a";
+
+  const matrixHtml =
+    '<section class="matrix-card">' +
+      '<div class="matrix-head">' +
+        "<h2>6 维核心差异速查</h2>" +
+        "<p>一句话记法：ACP 是「管本地助手的操作台协议」，A2A 是「调外部服务的协作协议」</p>" +
+      "</div>" +
+      '<div class="matrix-wrap">' +
+        '<table class="matrix">' +
+          '<thead><tr><th>对比维度</th><th class="col-acp">ACP（Agent Client Protocol）</th><th class="col-a2a">A2A（Agent2Agent）</th></tr></thead>' +
+          "<tbody>" +
+            COMPARE_MATRIX.map((r) =>
+              '<tr><td class="dim">' + esc(r.dim) + "</td><td>" + esc(r.acp) + "</td><td>" + esc(r.a2a) + "</td></tr>"
+            ).join("") +
+          "</tbody>" +
+        "</table>" +
+      "</div>" +
+    "</section>";
+
+  const stagesHtml = COMPARE_STAGES.map((st) => {
+    const renderCol = (uids, protoKey, label) => {
+      const items = uids.map((uid) => {
+        const s = STEP_BY_UID[uid];
+        const isSel = state.compareUid === uid;
+        const borderStyle = isSel
+          ? "border-color:var(--" + protoKey + ");background:var(--" + protoKey + "-soft);"
+          : "";
+        return (
+          '<button type="button" class="mini-step ' + protoKey + '" data-compare-uid="' + uid + '" style="' + borderStyle + '">' +
+            '<div class="mini-step-top">' +
+              '<span class="mini-step-title">' +
+                '<span class="mini-dir">' + (s.dir === "right" ? "→" : "←") + "</span>" +
+                esc(s.method) +
+              "</span>" +
+              '<span class="kind-tag ' + (s.human ? "human" : "") + '">' + esc(s.kind) + "</span>" +
+            "</div>" +
+            "<p>" + esc(s.short) + "</p>" +
+          "</button>"
+        );
+      }).join("");
+      return (
+        '<div class="stage-col">' +
+          '<div class="stage-col-label ' + protoKey + '">' + label + "</div>" +
+          items +
+        "</div>"
+      );
+    };
+
+    return (
+      '<article class="stage-card">' +
+        '<div class="stage-card-head">' +
+          "<h3>" + esc(st.title) + "</h3>" +
+          '<span class="stage-takeaway">' + esc(st.takeaway) + "</span>" +
+        "</div>" +
+        '<div class="stage-cols">' +
+          renderCol(st.acpUids, "acp", "ACP · 本地白盒") +
+          renderCol(st.a2aUids, "a2a", "A2A · 远程黑盒") +
+        "</div>" +
+      "</article>"
+    );
+  }).join("");
+
+  return (
+    '<div class="compare-view" id="view-compare"' + (state.tab !== "compare" ? " hidden" : "") + ">" +
+      matrixHtml +
+      '<div class="workspace">' +
+        '<div class="stage-list">' + stagesHtml + "</div>" +
+        '<aside class="inspector proto-view ' + (isA2a ? "a2a" : "acp") + '" style="display:flex" aria-label="对照报文检视器">' +
+          inspectorInnerHtml(cStep, { showNav: false }) +
+          '<div class="ins-foot">' +
+            '<span style="font-size:12px;color:var(--ink-3)">点击左侧任一协议卡片即可切换报文</span>' +
+            '<button type="button" class="pair-jump" data-open-full="' + cStep.uid + '">在完整时序图中定位 →</button>' +
+          "</div>" +
+        "</aside>" +
+      "</div>" +
+    "</div>"
+  );
+}
+
+function render() {
+  document.getElementById("app").innerHTML =
+    renderProtocolView("acp") +
+    renderProtocolView("a2a") +
+    renderCompareView();
+
+  document.querySelectorAll(".tabs button").forEach((b) => {
+    const on = b.dataset.tab === state.tab;
+    b.classList.toggle("on", on);
+    b.setAttribute("aria-selected", on ? "true" : "false");
+  });
+}
+
+function setTab(tab, scrollTop = false) {
+  state.tab = ["acp", "a2a", "compare"].includes(tab) ? tab : "acp";
+  history.replaceState(null, "", "#" + state.tab);
+  render();
+  if (scrollTop) window.scrollTo({ top: 0, behavior: "instant" });
+}
+
+function selectStep(uid, shouldScroll = false) {
+  const st = STEP_BY_UID[uid];
+  if (!st) return;
+  state.selected[st.protoKey] = uid;
+  render();
+  if (shouldScroll) {
+    const el = document.querySelector('.step-row[data-uid="' + uid + '"]');
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+}
+
+function stepRelative(delta) {
+  if (state.tab !== "acp" && state.tab !== "a2a") return;
+  const list = FLAT[state.tab];
+  const cur = STEP_BY_UID[state.selected[state.tab]];
+  const nextIdx = cur.idx - 1 + delta;
+  if (nextIdx < 0 || nextIdx >= list.length) return;
+  selectStep(list[nextIdx].uid, true);
+}
+
+/* Event delegation */
+document.querySelector(".tabs").addEventListener("click", (e) => {
+  const btn = e.target.closest("button[data-tab]");
+  if (!btn || btn.dataset.tab === state.tab) return;
+  setTab(btn.dataset.tab, true);
+});
+
+document.getElementById("app").addEventListener("click", (e) => {
+  const copyBtn = e.target.closest("button[data-copy-uid]");
+  if (copyBtn) {
+    e.stopPropagation();
+    const st = STEP_BY_UID[copyBtn.dataset.copyUid];
+    if (st && navigator.clipboard) {
+      navigator.clipboard.writeText(JSON.stringify(st.json, null, 2)).then(() => {
+        copyBtn.textContent = "已复制";
+        copyBtn.classList.add("copied");
+        setTimeout(() => {
+          copyBtn.textContent = "复制 JSON";
+          copyBtn.classList.remove("copied");
+        }, 1400);
+      });
+    }
+    return;
+  }
+
+  const jumpBtn = e.target.closest("button[data-jump-uid]");
+  if (jumpBtn) {
+    selectStep(jumpBtn.dataset.jumpUid, true);
+    return;
+  }
+
+  const openFullBtn = e.target.closest("button[data-open-full]");
+  if (openFullBtn) {
+    const st = STEP_BY_UID[openFullBtn.dataset.openFull];
+    if (st) {
+      state.selected[st.protoKey] = st.uid;
+      setTab(st.protoKey, false);
+      setTimeout(() => {
+        const el = document.querySelector('.step-row[data-uid="' + st.uid + '"]');
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 30);
+    }
+    return;
+  }
+
+  const navBtn = e.target.closest("button[data-nav]");
+  if (navBtn) {
+    stepRelative(navBtn.dataset.nav === "next" ? 1 : -1);
+    return;
+  }
+
+  const compareCard = e.target.closest("button[data-compare-uid]");
+  if (compareCard) {
+    state.compareUid = compareCard.dataset.compareUid;
+    render();
+    return;
+  }
+
+  const stepRow = e.target.closest("button.step-row[data-uid]");
+  if (stepRow) {
+    selectStep(stepRow.dataset.uid, false);
+  }
+});
+
+/* Keyboard stepping */
+document.addEventListener("keydown", (e) => {
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  if (e.key === "ArrowDown" || e.key === "j") {
+    if (state.tab === "acp" || state.tab === "a2a") {
+      e.preventDefault();
+      stepRelative(1);
+    }
+  } else if (e.key === "ArrowUp" || e.key === "k") {
+    if (state.tab === "acp" || state.tab === "a2a") {
+      e.preventDefault();
+      stepRelative(-1);
+    }
+  }
+});
+
+const initialHash = location.hash.replace("#", "");
+setTab(["acp", "a2a", "compare"].includes(initialHash) ? initialHash : "acp", false);
+</script>
+</body>
+</html>
