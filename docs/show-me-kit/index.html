@@ -1,0 +1,1341 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>show-me 视觉组件库 · 手绘图文拆解</title>
+<style>
+  :root{
+    --paper:#FDFDFB;
+    --paper-2:#F6F5F0;
+    --ink:#151B29;
+    --ink-2:#3D4350;
+    --muted:#7C8494;
+    --line:#E8E5DD;
+    --blue-100:#EAF3F8;
+    --blue-200:#D0E8F8;
+    --blue-300:#B8D8F8;
+    --blue-500:#3888F8;
+    --yellow-200:#F8E8B8;
+    --yellow-300:#F8E080;
+    --red-200:#F8D0D0;
+    --red-500:#F04840;
+    --green-200:#C8F0D8;
+    --green-500:#2FA866;
+    --orange-200:#F8E0C8;
+    --purple-200:#D8D0F8;
+    --font-title:"Yuanti SC","Hannotate SC","HanziPen SC","PingFang SC","Microsoft YaHei",sans-serif;
+    --font-body:"PingFang SC","Hiragino Sans GB","Yuanti SC","Microsoft YaHei",sans-serif;
+    --font-hand:"Hannotate SC","HanziPen SC","Yuanti SC","PingFang SC",sans-serif;
+    --font-marker:"Marker Felt","Chalkboard SE","Hannotate SC","Yuanti SC",sans-serif;
+    --font-mono:"SFMono-Regular","JetBrains Mono","Cascadia Code",Menlo,Consolas,monospace;
+    --shadow:0 1px 0 rgba(21,27,41,.03),0 18px 40px -30px rgba(21,27,41,.45);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;background:var(--paper);color:var(--ink);
+    font-family:var(--font-body);font-size:16px;line-height:1.75;
+    -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+  }
+  body::before{
+    content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+    background-image:radial-gradient(rgba(21,27,41,.13) .6px,transparent .6px);
+    background-size:24px 24px;opacity:.16;
+  }
+  ::selection{background:var(--blue-300);color:var(--ink)}
+  a{color:inherit}
+  button{font:inherit}
+  svg{display:block}
+  .sprite{position:absolute;width:0;height:0;overflow:hidden}
+  .wrap{width:min(1180px,calc(100% - 48px));margin:0 auto;position:relative;z-index:1}
+  .red{color:var(--red-500);font-style:normal;font-weight:800}
+  .hl{
+    background:linear-gradient(180deg,transparent 56%,var(--blue-300) 56%,var(--blue-300) 92%,transparent 92%);
+    padding:0 .08em;box-decoration-break:clone;-webkit-box-decoration-break:clone;
+  }
+  .font-marker{font-family:var(--font-marker);font-weight:400}
+
+  .hero{padding:40px 0 22px;text-align:center;position:relative}
+  .brand{
+    margin:0 0 40px;font-family:var(--font-mono);font-size:10.5px;letter-spacing:.2em;
+    text-transform:uppercase;color:var(--muted);
+  }
+  .brand span{color:var(--blue-500)}
+  h1{
+    margin:0;font-family:var(--font-title);font-weight:900;
+    font-size:clamp(44px,7.2vw,78px);line-height:1.06;letter-spacing:-.01em;
+  }
+  h1 .en{display:inline-block;transform:rotate(-1.5deg);font-family:var(--font-marker);font-weight:400;letter-spacing:.01em}
+  .marker{position:relative;z-index:0;display:inline-block;padding:0 .08em}
+  .marker::after{
+    content:"";position:absolute;left:-.06em;right:-.06em;bottom:.06em;height:.22em;z-index:-1;
+    border-radius:999px;background:var(--blue-300);transform:rotate(-1.2deg);
+  }
+  .lead{
+    max-width:780px;margin:24px auto 0;font-size:clamp(16px,2vw,19px);
+    line-height:1.9;color:var(--ink-2);
+  }
+  .tags{display:flex;justify-content:center;flex-wrap:wrap;gap:8px;margin:24px 0 0}
+  .tag{
+    background:#fff;border:1.5px solid var(--line);border-radius:999px;padding:5px 12px;
+    font-size:12px;font-weight:700;color:var(--ink-2);box-shadow:0 2px 0 rgba(21,27,41,.03);
+  }
+  .tag b{color:var(--blue-500);font-family:var(--font-mono);font-size:11px}
+
+  .gallery{
+    display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px;
+    margin:34px auto 0;max-width:1000px;
+  }
+  .shot{
+    appearance:none;border:1.5px solid var(--line);background:#fff;border-radius:14px;
+    padding:6px;cursor:zoom-in;text-align:left;transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease;
+  }
+  .shot img{width:100%;border-radius:9px;display:block;border:1px solid #EFEEE9}
+  .shot span{
+    display:block;font-family:var(--font-mono);font-size:9.5px;color:var(--muted);
+    padding:6px 2px 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .shot:hover{transform:translateY(-3px) rotate(-.4deg);box-shadow:var(--shadow);border-color:var(--blue-300)}
+
+  .toc{
+    display:flex;justify-content:center;flex-wrap:wrap;gap:4px 8px;
+    margin:30px 0 0;padding:0;list-style:none;
+  }
+  .toc a{
+    text-decoration:none;font-family:var(--font-mono);font-size:11.5px;color:var(--ink-2);
+    padding:4px 7px;border-bottom:2px solid transparent;transition:.15s;
+  }
+  .toc a:hover{color:var(--blue-500);border-color:var(--blue-300)}
+
+  .section{padding:56px 0;border-top:1.5px dashed var(--line)}
+  .sec-head{display:flex;gap:16px;align-items:flex-start;margin-bottom:28px}
+  .sec-num{
+    flex:none;font-family:var(--font-mono);font-size:11.5px;font-weight:700;color:var(--blue-500);
+    background:var(--blue-100);border:1.5px solid var(--blue-200);border-radius:999px;
+    padding:4px 10px;margin-top:7px;
+  }
+  .sec-head h2{
+    margin:0;font-family:var(--font-title);font-weight:900;
+    font-size:clamp(28px,4.2vw,42px);line-height:1.12;letter-spacing:-.01em;
+  }
+  .sec-head h2 small{
+    font-family:var(--font-marker);font-size:.42em;color:var(--muted);
+    font-weight:400;letter-spacing:.08em;margin-left:8px;
+  }
+  .sec-head p{margin:8px 0 0;font-size:14px;line-height:1.8;color:var(--muted);max-width:760px}
+
+  .grid-2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+  .chart-grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:16px}
+  .span-5{grid-column:span 5}
+  .span-6{grid-column:span 6}
+  .span-7{grid-column:span 7}
+  .span-12{grid-column:span 12}
+
+  .palette{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
+  .sw{
+    background:#fff;border:1.5px solid var(--line);border-radius:16px;padding:8px;
+    box-shadow:0 2px 0 rgba(21,27,41,.02);transition:transform .18s ease,box-shadow .18s ease;
+  }
+  .sw i{display:block;height:86px;border-radius:10px;border:1px solid rgba(21,27,41,.08)}
+  .sw strong{display:block;font-family:var(--font-title);font-size:13.5px;margin-top:9px}
+  .sw code{display:block;font-family:var(--font-mono);font-size:10.5px;color:var(--muted);letter-spacing:.02em}
+  .sw em{display:block;font-style:normal;font-size:11px;color:var(--ink-2);margin-top:2px}
+  .sw:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
+
+  .ratio{margin-top:18px;background:#fff;border:1.5px solid var(--line);border-radius:16px;padding:14px 16px}
+  .ratio-bar{display:flex;height:26px;border-radius:999px;overflow:hidden;border:1.5px solid var(--ink)}
+  .ratio-bar span{display:block;height:100%}
+  .ratio-legend{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:10px;font-size:11px;color:var(--muted)}
+  .ratio-legend i{
+    display:inline-block;width:10px;height:10px;border-radius:3px;
+    border:1px solid rgba(21,27,41,.1);margin-right:5px;vertical-align:middle;
+  }
+  .rules-inline{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px}
+  .rule{
+    background:#fff;border:1.5px solid var(--line);border-radius:14px;padding:12px 14px;
+    font-size:12px;line-height:1.7;color:var(--ink-2);
+  }
+  .rule b{display:block;font-family:var(--font-title);font-size:13.5px;color:var(--ink);margin-bottom:2px}
+
+  .type-grid{display:grid;grid-template-columns:1.35fr 1fr 1fr;gap:14px}
+  .type-card{
+    background:#fff;border:1.5px solid var(--line);border-radius:20px;padding:22px;
+    min-height:212px;display:flex;flex-direction:column;
+  }
+  .type-kicker{font-family:var(--font-mono);font-size:10px;color:var(--muted);letter-spacing:.1em}
+  .type-display{
+    font-family:var(--font-title);font-weight:900;line-height:1.2;
+    font-size:clamp(28px,3.2vw,42px);margin-top:14px;
+  }
+  .type-body{font-size:16px;line-height:1.9;margin-top:14px;color:var(--ink-2)}
+  .type-code{
+    font-family:var(--font-mono);font-size:12.5px;line-height:1.85;background:var(--paper-2);
+    border-radius:10px;padding:10px 12px;margin-top:14px;white-space:pre-wrap;color:var(--ink-2);
+  }
+  .type-note{
+    margin-top:auto;padding-top:14px;border-top:1px dashed var(--line);
+    font-size:11.5px;line-height:1.6;color:var(--muted);
+  }
+  .scale{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+  .scale span{
+    background:#fff;border:1.5px solid var(--line);border-radius:999px;padding:3px 10px;
+    font-family:var(--font-mono);font-size:10.5px;color:var(--muted);
+  }
+  .scale b{color:var(--ink);font-size:11px}
+
+  .card{background:#fff;border:1.5px solid var(--line);border-radius:22px;padding:24px;box-shadow:var(--shadow)}
+  .feature{display:flex;flex-direction:column;gap:16px}
+  .feature-head{display:flex;gap:14px;align-items:center}
+  .num{
+    flex:none;width:42px;height:42px;border-radius:50%;background:var(--blue-500);color:#fff;
+    display:grid;place-items:center;font-family:var(--font-title);font-size:23px;font-weight:900;
+    line-height:1;box-shadow:0 3px 0 rgba(56,136,248,.22);
+  }
+  .feature h3{margin:0;font-family:var(--font-title);font-size:clamp(20px,2.4vw,25px);font-weight:900;line-height:1.3}
+  .feature-body{display:flex;gap:16px;align-items:flex-start}
+  .icon-box{
+    flex:none;width:80px;height:80px;border-radius:18px;background:var(--paper-2);
+    display:grid;place-items:center;
+  }
+  .icon-box svg{width:58px;height:58px}
+  .feature p{margin:0;font-size:15.5px;line-height:1.9;color:var(--ink-2)}
+  .num-row{
+    display:flex;align-items:center;gap:8px;margin-top:auto;padding-top:14px;
+    border-top:1px dashed var(--line);font-size:11px;color:var(--muted);
+  }
+  .num-row .num{width:30px;height:30px;font-size:17px;box-shadow:none}
+  .num-row span:last-child{margin-left:4px}
+
+  .lab{display:flex;flex-direction:column;gap:20px}
+  .lab-row{display:flex;flex-wrap:wrap;align-items:center;gap:16px}
+  .lab-label{width:100%;font-family:var(--font-mono);font-size:10px;letter-spacing:.08em;color:var(--muted)}
+  .bubble{
+    position:relative;display:inline-block;background:#fff;border:2.5px solid var(--ink);
+    border-radius:22px;padding:12px 26px;font-family:var(--font-marker);font-size:32px;
+    line-height:1.1;white-space:nowrap;transform:rotate(-1deg);
+  }
+  .bubble u{
+    text-decoration:none;
+    background:linear-gradient(180deg,transparent 62%,var(--blue-300) 62%,var(--blue-300) 92%,transparent 92%);
+    padding:0 .06em;
+  }
+  .bubble::before{
+    content:"";position:absolute;left:30px;bottom:-19px;border:9px solid transparent;
+    border-top:15px solid var(--ink);
+  }
+  .bubble::after{
+    content:"";position:absolute;left:33px;bottom:-12px;border:7px solid transparent;
+    border-top:12px solid #fff;
+  }
+  .note{
+    display:inline-block;background:var(--yellow-200);color:var(--ink);font-weight:800;
+    padding:9px 16px;border-radius:8px 14px 10px 12px;transform:rotate(-2deg);
+    box-shadow:0 3px 0 rgba(21,27,41,.06);font-size:15px;line-height:1.5;
+  }
+  .pill{
+    display:inline-flex;align-items:center;gap:6px;background:var(--blue-200);color:var(--ink);
+    border-radius:999px;padding:4px 12px;font-size:11.5px;font-weight:800;white-space:nowrap;
+  }
+  .pill::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--blue-500)}
+  .callout{
+    position:relative;display:inline-block;background:var(--yellow-200);border:2.5px solid var(--ink);
+    border-radius:12px;padding:7px 14px;font-size:13px;font-weight:800;line-height:1.5;
+    transform:rotate(2deg);
+  }
+  .callout::before{
+    content:"";position:absolute;left:16px;bottom:-15px;border:8px solid transparent;
+    border-top:12px solid var(--ink);
+  }
+  .callout::after{
+    content:"";position:absolute;left:19px;bottom:-9px;border:6px solid transparent;
+    border-top:9px solid var(--yellow-200);
+  }
+  .stack{display:flex;flex-direction:column;gap:18px;align-items:flex-start}
+
+  .panel{
+    background:#fff;border:1.5px solid var(--line);border-radius:22px;padding:18px;
+    box-shadow:var(--shadow);display:flex;flex-direction:column;gap:14px;min-width:0;
+  }
+  .panel-head{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  .kicker{
+    font-family:var(--font-mono);font-size:9.5px;color:var(--blue-500);
+    background:var(--blue-100);border-radius:4px;padding:2px 6px;
+  }
+  .panel h3{margin:0;font-family:var(--font-title);font-size:18px;font-weight:900;line-height:1.3}
+  .chip{
+    margin-left:auto;font-size:10.5px;font-weight:700;color:var(--ink-2);
+    background:var(--paper-2);border:1px solid var(--line);border-radius:999px;padding:2px 9px;
+  }
+  .caption{margin:0;font-size:11.5px;line-height:1.7;color:var(--muted)}
+
+  .window{
+    position:relative;background:var(--paper);border:2.5px solid var(--ink);
+    border-radius:14px;overflow:hidden;
+  }
+  .window-bar{
+    display:flex;align-items:center;gap:6px;padding:9px 12px;background:#fff;
+    border-bottom:2.5px solid var(--ink);
+  }
+  .wdot{width:10px;height:10px;border-radius:50%;border:1px solid rgba(21,27,41,.12)}
+  .wdot.r{background:#F26B5E}.wdot.y{background:#F7C948}.wdot.g{background:#4CC38A}
+  .wtitle{
+    margin-left:6px;font-size:10px;font-weight:800;background:var(--blue-200);
+    padding:2px 8px;border-radius:999px;
+  }
+  .window-body{padding:14px;background:#fff;position:relative}
+  .window-note{
+    position:absolute;top:10px;right:10px;background:var(--yellow-200);
+    padding:5px 9px;border-radius:6px;font-size:10.5px;font-weight:800;line-height:1.4;
+    transform:rotate(3deg);box-shadow:0 2px 0 rgba(21,27,41,.07);max-width:96px;
+  }
+  .diagram{width:100%;height:auto;display:block}
+  .diagram text{font-family:var(--font-mono);fill:var(--ink)}
+  .svg-label{font-family:var(--font-title);font-size:13px;font-weight:800;fill:var(--ink)}
+  .svg-small{font-family:var(--font-mono);font-size:9px;fill:var(--muted)}
+
+  .diff{display:grid;grid-template-columns:1fr 1fr;gap:8px;font-family:var(--font-mono);font-size:12px;line-height:1.75;min-width:0}
+  .diff-col{border-radius:12px;padding:8px;border:1.5px solid;min-width:0}
+  .diff-col.bad{background:#FDE9E8;border-color:#F4C7C3}
+  .diff-col.good{background:#E7F7ED;border-color:#C3E8CD}
+  .diff-head{
+    font-family:var(--font-title);font-size:10.5px;font-weight:800;letter-spacing:.04em;
+    margin-bottom:4px;padding:0 5px;
+  }
+  .bad .diff-head{color:#B93832}.good .diff-head{color:#24804A}
+  .diff-row{display:flex;gap:7px;padding:1px 5px;border-radius:5px;white-space:nowrap;overflow:hidden}
+  .diff-row b{width:9px;flex:none;font-weight:700}
+  .bad .diff-row b{color:var(--red-500)}
+  .good .diff-row b{color:var(--green-500)}
+  .diff-foot{
+    display:flex;flex-wrap:wrap;gap:4px 12px;border-top:1px dashed var(--line);
+    padding-top:10px;font-family:var(--font-mono);font-size:10px;color:var(--muted);
+  }
+  .diff-foot .plus{color:var(--green-500);font-weight:700}
+  .diff-foot .minus{color:var(--red-500);font-weight:700}
+
+  .filetree{
+    margin:0;padding:2px 0 0;list-style:none;overflow:auto;
+    font-family:var(--font-mono);font-size:12px;line-height:2.15;
+  }
+  .filetree ul{list-style:none;margin:0 0 0 10px;padding-left:16px;border-left:1.5px solid #D3D7DF}
+  .filetree ul>li{position:relative}
+  .filetree ul>li::before{content:"";position:absolute;left:-16px;top:1.05em;width:11px;height:1.5px;background:#D3D7DF}
+  .fname{font-weight:700;color:var(--ink)}
+  .comment{color:#9AA2B1;font-size:10.5px;margin-left:7px}
+  .mini-ico{width:15px;height:15px;vertical-align:-2px;margin-right:4px}
+  .mini-ico.dim{opacity:.45;filter:grayscale(1)}
+
+  .flow{display:grid;grid-template-columns:230px 1fr;gap:28px;align-items:center}
+  .flow-start{
+    background:var(--blue-200);border:2.5px solid var(--ink);border-radius:20px;
+    padding:20px 14px;text-align:center;font-family:var(--font-title);font-weight:900;
+    font-size:23px;line-height:1.35;transform:rotate(-1deg);box-shadow:5px 6px 0 var(--blue-100);
+  }
+  .flow-list{display:grid;gap:9px;min-width:0}
+  .flow-row{display:grid;grid-template-columns:190px 18px 148px 1fr;gap:10px;align-items:center;min-width:0}
+  .qtag{
+    border-radius:12px;padding:7px 11px;font-size:12.5px;font-weight:800;text-align:center;
+    border:1px solid rgba(21,27,41,.06);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .q1{background:var(--blue-200)}
+  .q2{background:var(--yellow-200)}
+  .q3{background:var(--red-200)}
+  .q4{background:var(--green-200)}
+  .q5{background:var(--purple-200)}
+  .q6{background:var(--orange-200)}
+  .arrow{font-family:var(--font-marker);font-size:19px;text-align:center;line-height:1;color:var(--ink)}
+  .mini{
+    display:flex;align-items:center;gap:5px;border:2px solid var(--ink);background:#fff;
+    border-radius:10px;padding:3px 7px;font-size:10.5px;font-weight:800;white-space:nowrap;
+  }
+  .mini svg{width:26px;height:26px;flex:none}
+  .flow-desc{font-size:11.5px;line-height:1.6;color:var(--muted);min-width:0}
+  .flow-desc em{color:var(--red-500);font-style:normal;font-weight:800}
+
+  .icon-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px}
+  .icon-tile{
+    background:#fff;border:1.5px solid var(--line);border-radius:18px;padding:16px;
+    text-align:center;transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease;
+  }
+  .ico-wrap{
+    width:66px;height:66px;margin:0 auto;border-radius:18px;display:grid;place-items:center;
+    background:var(--tile,var(--paper-2));
+  }
+  .ico-wrap svg{width:52px;height:52px}
+  .icon-tile strong{display:block;font-family:var(--font-title);font-size:13.5px;margin-top:10px;line-height:1.3}
+  .icon-tile small{display:block;font-size:10.5px;color:var(--muted);line-height:1.5;margin-top:2px;min-height:32px}
+  .icon-tile:hover{transform:translateY(-3px);border-color:var(--blue-300);box-shadow:var(--shadow)}
+
+  .story{display:grid;grid-template-columns:1fr 1.15fr;gap:16px}
+  .story-card{
+    background:#fff;border:1.5px solid var(--line);border-radius:22px;padding:20px;
+    display:flex;flex-direction:column;gap:12px;box-shadow:var(--shadow);min-width:0;
+  }
+  .story-card.blue{background:linear-gradient(180deg,#fff 30%,var(--blue-100))}
+  .boy{width:100%;max-width:330px;margin:0 auto;height:auto}
+  .fact-row{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+  .fact{
+    background:#fff;border:1.5px solid var(--line);border-radius:999px;padding:3px 10px;
+    font-size:10.5px;font-weight:700;color:var(--ink-2);
+  }
+  .tree-svg{width:100%;height:auto;display:block}
+
+  .doodle-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:16px}
+  .doodle{
+    display:flex;align-items:center;gap:10px;background:#fff;border:1.5px dashed #D5D1C7;
+    border-radius:14px;padding:10px 12px;min-width:0;
+  }
+  .doodle svg{width:50px;height:38px;flex:none}
+  .doodle b{display:block;font-size:12px;line-height:1.4}
+  .doodle small{display:block;font-size:10px;color:var(--muted);line-height:1.5}
+
+  .compose{display:grid;grid-template-columns:1.45fr 1fr;gap:18px;align-items:start}
+  .poster{
+    background:#fff;border:3px solid var(--ink);border-radius:26px;padding:28px;
+    box-shadow:10px 12px 0 var(--blue-100);position:relative;overflow:hidden;min-width:0;
+  }
+  .poster-kicker{font-family:var(--font-mono);font-size:9.5px;letter-spacing:.18em;color:var(--muted)}
+  .poster h3{
+    margin:10px 0 0;font-family:var(--font-title);font-weight:900;
+    font-size:clamp(30px,4vw,44px);line-height:1.16;
+  }
+  .poster-rule{width:86%;height:10px;border-radius:999px;background:var(--blue-300);margin-top:7px;transform:rotate(-1.2deg)}
+  .poster-mid{
+    display:flex;gap:14px;align-items:center;margin-top:18px;background:var(--yellow-200);
+    border-radius:18px;padding:14px 16px;
+  }
+  .poster-mid svg{width:52px;height:52px;flex:none}
+  .poster-mid p{margin:0;font-size:13.5px;font-weight:700;line-height:1.75}
+  .poster-label{display:flex;justify-content:center;margin-top:16px}
+  .poster-icons{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
+  .p-icon{background:var(--paper-2);border-radius:14px;padding:10px 5px;text-align:center;min-width:0}
+  .p-icon svg{width:42px;height:42px;margin:0 auto}
+  .p-icon b{display:block;font-size:11.5px;margin-top:4px;line-height:1.3}
+  .p-icon small{display:block;font-size:9.5px;color:var(--muted);line-height:1.5}
+  .poster-foot{display:flex;align-items:center;gap:8px;margin-top:16px;flex-wrap:wrap}
+  .poster-foot .pill{background:var(--blue-200);white-space:normal;line-height:1.5}
+  .poster-scribble{display:inline-flex;align-items:center;gap:6px;font-size:10.5px;color:var(--muted)}
+  .poster-scribble svg{width:40px;height:30px}
+  .poster-arrow{width:54px;height:30px}
+
+  .rules{background:var(--paper-2);border:1.5px solid var(--line);border-radius:22px;padding:22px;min-width:0}
+  .rules h3{margin:0 0 12px;font-family:var(--font-title);font-size:20px;font-weight:900}
+  .rules ol{margin:0;padding-left:20px;font-size:13px;line-height:2;color:var(--ink-2)}
+  .rules li::marker{color:var(--blue-500);font-family:var(--font-mono);font-weight:700}
+  .rules b{color:var(--ink)}
+
+  .code-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .code-card{
+    background:#fff;border:1.5px solid var(--line);border-radius:20px;overflow:hidden;
+    display:flex;flex-direction:column;min-width:0;
+  }
+  .code-head{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    padding:12px 16px;border-bottom:1.5px solid var(--line);
+  }
+  .code-head b{font-family:var(--font-mono);font-size:10px;letter-spacing:.06em;color:var(--muted)}
+  .copy{
+    appearance:none;border:1.5px solid var(--ink);background:#fff;border-radius:999px;
+    padding:3px 12px;font-size:10.5px;font-weight:800;cursor:pointer;transition:.15s;
+  }
+  .copy:hover{background:var(--blue-200)}
+  .copy:active{transform:translateY(1px)}
+  .code-card pre{
+    margin:0;padding:18px;overflow:auto;flex:1;background:#141A28;color:#EDF2F7;
+    font-family:var(--font-mono);font-size:11.5px;line-height:1.75;tab-size:2;
+  }
+  .code-card code{font-family:inherit}
+
+  .footer{
+    border-top:1.5px dashed var(--line);padding:30px 0 64px;
+    display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;
+    font-size:11.5px;line-height:1.8;color:var(--muted);
+  }
+  .footer a{text-decoration:none;color:var(--ink-2);border-bottom:1px solid var(--blue-300)}
+  .footer b{color:var(--ink);font-family:var(--font-mono);font-size:10px}
+
+  dialog{
+    border:0;padding:0;background:transparent;width:min(94vw,900px);max-width:900px;
+  }
+  dialog::backdrop{background:rgba(21,27,41,.55);backdrop-filter:blur(4px)}
+  .lb-inner{position:relative;background:#fff;border-radius:20px;padding:10px;box-shadow:0 30px 80px rgba(0,0,0,.3)}
+  .lb-inner img{width:100%;max-height:82vh;object-fit:contain;border-radius:12px;display:block}
+  .lb-close{
+    position:absolute;top:-14px;right:-14px;width:34px;height:34px;border-radius:50%;
+    border:2px solid var(--ink);background:#fff;font-size:16px;font-weight:800;cursor:pointer;line-height:1;
+  }
+
+  @media(max-width:1000px){
+    .type-grid{grid-template-columns:1fr 1fr}
+    .type-card:first-child{grid-column:span 2}
+    .compose{grid-template-columns:1fr}
+    .story{grid-template-columns:1fr}
+  }
+  @media(max-width:900px){
+    .hero{padding-top:28px}
+    .type-grid{grid-template-columns:1fr}
+    .type-card:first-child{grid-column:auto}
+    .grid-2{grid-template-columns:1fr}
+    .gallery{grid-template-columns:repeat(3,minmax(0,1fr))}
+    .chart-grid>*{grid-column:span 12}
+    .rules-inline{grid-template-columns:1fr}
+    .flow{grid-template-columns:1fr}
+    .flow-start{max-width:290px;margin:0 auto}
+    .flow-row{grid-template-columns:1fr 18px 1fr;grid-template-areas:"q a m" "d d d";row-gap:4px}
+    .flow-row .qtag{grid-area:q}
+    .flow-row .arrow{grid-area:a}
+    .flow-row .mini{grid-area:m}
+    .flow-row .flow-desc{grid-area:d;padding-left:2px}
+    .doodle-grid{grid-template-columns:repeat(2,1fr)}
+    .code-grid{grid-template-columns:1fr}
+  }
+  @media(max-width:600px){
+    .wrap{width:calc(100% - 28px)}
+    .section{padding:42px 0}
+    .sec-head{gap:10px}
+    .sec-head h2 small{display:block;margin-left:0}
+    .gallery{grid-template-columns:repeat(2,1fr)}
+    .diff{grid-template-columns:1fr}
+    .poster{padding:20px}
+    .poster-icons{grid-template-columns:repeat(2,1fr)}
+    .hero h1{font-size:clamp(36px,10vw,54px)}
+    .feature-body{flex-direction:column}
+    .lab-row{gap:12px}
+  }
+</style>
+</head>
+<body>
+
+<svg class="sprite" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <symbol id="i-doc" viewBox="0 0 64 64">
+    <g transform="rotate(-2 32 32)">
+      <rect x="11" y="4" width="42" height="56" rx="6" fill="#fff" stroke="var(--ink)" stroke-width="3"/>
+      <path d="M19 17h26M19 26h26M19 35h16M19 47h26" fill="none" stroke="var(--ink)" stroke-width="2.5" stroke-linecap="round"/>
+      <circle cx="40" cy="35" r="1.7" fill="var(--ink)"/>
+    </g>
+  </symbol>
+  <symbol id="i-calltree" viewBox="0 0 64 64">
+    <path d="M32 17v9M14 26h36M14 26v10M32 26v10M50 26v10" fill="none" stroke="var(--ink)" stroke-width="2.5" stroke-linecap="round"/>
+    <rect x="25" y="5" width="14" height="12" rx="3" fill="var(--blue-200)" stroke="var(--ink)" stroke-width="2.5"/>
+    <rect x="7" y="36" width="14" height="12" rx="3" fill="var(--blue-200)" stroke="var(--ink)" stroke-width="2.5"/>
+    <rect x="25" y="36" width="14" height="12" rx="3" fill="var(--yellow-200)" stroke="var(--ink)" stroke-width="2.5"/>
+    <rect x="43" y="36" width="14" height="12" rx="3" fill="var(--blue-200)" stroke="var(--ink)" stroke-width="2.5"/>
+  </symbol>
+  <symbol id="i-componenttree" viewBox="0 0 64 64">
+    <path d="M32 17v9M14 26h36M14 26v10M32 26v10M50 26v10" fill="none" stroke="var(--ink)" stroke-width="2.5" stroke-linecap="round"/>
+    <rect x="25" y="5" width="14" height="12" rx="3" fill="var(--blue-300)" stroke="var(--ink)" stroke-width="2.5"/>
+    <rect x="7" y="36" width="14" height="12" rx="3" fill="var(--blue-200)" stroke="var(--ink)" stroke-width="2.5"/>
+    <rect x="25" y="36" width="14" height="12" rx="3" fill="var(--green-200)" stroke="var(--ink)" stroke-width="2.5"/>
+    <rect x="43" y="36" width="14" height="12" rx="3" fill="var(--red-200)" stroke="var(--ink)" stroke-width="2.5"/>
+  </symbol>
+  <symbol id="i-filetree" viewBox="0 0 64 64">
+    <path d="M7 16a4 4 0 014-4h11l5 5h16a4 4 0 014 4v8H7z" fill="var(--yellow-200)" stroke="var(--ink)" stroke-width="2.5" stroke-linejoin="round"/>
+    <path d="M7 21h40v26a3 3 0 01-3 3H10a3 3 0 01-3-3z" fill="var(--yellow-200)" stroke="var(--ink)" stroke-width="2.5"/>
+    <path d="M22 31h19M22 39h19M22 47h12" fill="none" stroke="var(--ink)" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M16 27v22" fill="none" stroke="var(--ink)" stroke-width="2" opacity=".45"/>
+  </symbol>
+  <symbol id="i-mermaid" viewBox="0 0 64 64">
+    <rect x="4" y="6" width="16" height="11" rx="3" fill="var(--blue-200)" stroke="var(--ink)" stroke-width="2.5"/>
+    <rect x="24" y="6" width="16" height="11" rx="3" fill="var(--red-200)" stroke="var(--ink)" stroke-width="2.5"/>
+    <rect x="44" y="6" width="16" height="11" rx="3" fill="var(--green-200)" stroke="var(--ink)" stroke-width="2.5"/>
+    <path d="M12 17v38M32 17v38M52 17v38" fill="none" stroke="var(--ink)" stroke-width="1.8" stroke-dasharray="3 4"/>
+    <path d="M12 25h20M32 34h20M52 43h-20M32 52h-20" fill="none" stroke="var(--ink)" stroke-width="2" stroke-linecap="round"/>
+    <path d="M29 21l4 4-4 4M49 30l4 4-4 4M35 39l-4 4 4 4M15 48l-4 4 4 4" fill="none" stroke="var(--ink)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  </symbol>
+  <symbol id="i-diff" viewBox="0 0 64 64">
+    <rect x="4" y="10" width="56" height="44" rx="6" fill="#fff" stroke="var(--ink)" stroke-width="3"/>
+    <path d="M32 10v44" fill="none" stroke="var(--ink)" stroke-width="2.5"/>
+    <rect x="10" y="20" width="16" height="4" rx="2" fill="var(--red-500)" opacity=".85"/>
+    <rect x="10" y="29" width="12" height="4" rx="2" fill="var(--red-500)" opacity=".5"/>
+    <rect x="10" y="38" width="15" height="4" rx="2" fill="var(--red-500)" opacity=".3"/>
+    <rect x="38" y="20" width="16" height="4" rx="2" fill="var(--green-500)" opacity=".9"/>
+    <rect x="38" y="29" width="12" height="4" rx="2" fill="var(--green-500)" opacity=".55"/>
+    <rect x="38" y="38" width="15" height="4" rx="2" fill="var(--green-500)" opacity=".35"/>
+  </symbol>
+  <symbol id="i-html" viewBox="0 0 64 64">
+    <rect x="4" y="10" width="56" height="44" rx="6" fill="#fff" stroke="var(--ink)" stroke-width="3"/>
+    <path d="M4 20h56" fill="none" stroke="var(--ink)" stroke-width="2.5"/>
+    <circle cx="11" cy="15" r="2" fill="#F26B5E"/>
+    <circle cx="18" cy="15" r="2" fill="#F7C948"/>
+    <circle cx="25" cy="15" r="2" fill="#4CC38A"/>
+    <path d="M25 29l-6 6 6 6M39 29l6 6-6 6M34 27l-5 16" fill="none" stroke="var(--blue-500)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  </symbol>
+  <symbol id="i-folder" viewBox="0 0 64 64">
+    <path d="M5 17a4 4 0 014-4h13l5 5h20a4 4 0 014 4v27a4 4 0 01-4 4H9a4 4 0 01-4-4z" fill="var(--yellow-200)" stroke="var(--ink)" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M5 23h47" fill="none" stroke="var(--ink)" stroke-width="2" opacity=".22"/>
+  </symbol>
+  <symbol id="i-code" viewBox="0 0 64 64">
+    <rect x="6" y="6" width="52" height="52" rx="12" fill="var(--blue-100)" stroke="var(--ink)" stroke-width="3"/>
+    <path d="M27 24l-8 8 8 8M37 24l8 8-8 8M35 21l-6 22" fill="none" stroke="var(--blue-500)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </symbol>
+  <symbol id="i-bulb" viewBox="0 0 64 64">
+    <circle cx="32" cy="26" r="14" fill="var(--yellow-200)" stroke="var(--ink)" stroke-width="3"/>
+    <path d="M26 42h12v4a4 4 0 01-4 4h-4a4 4 0 01-4-4z" fill="#fff" stroke="var(--ink)" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M26 28c2-4 5-6 6-6s4 2 6 6" fill="none" stroke="var(--ink)" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M32 5v4M14 14l3 3M50 14l-3 3M8 32h4M52 32h4" fill="none" stroke="var(--ink)" stroke-width="2.5" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="i-clipboard" viewBox="0 0 64 64">
+    <g transform="rotate(-3 32 32)">
+      <rect x="12" y="8" width="40" height="50" rx="6" fill="#fff" stroke="var(--ink)" stroke-width="3"/>
+      <rect x="24" y="4" width="16" height="9" rx="3" fill="var(--blue-200)" stroke="var(--ink)" stroke-width="2.5"/>
+      <path d="M21 24h22M21 33h22M21 42h14" fill="none" stroke="var(--ink)" stroke-width="2.5" stroke-linecap="round"/>
+    </g>
+  </symbol>
+  <symbol id="i-xnode" viewBox="0 0 64 64">
+    <rect x="10" y="16" width="44" height="32" rx="7" fill="none" stroke="#C9CEDA" stroke-width="2.5" stroke-dasharray="5 5"/>
+    <path d="M25 25l14 14M39 25L25 39" fill="none" stroke="var(--red-500)" stroke-width="3" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="d-ticks" viewBox="0 0 64 48">
+    <path d="M8 18l4 12M24 10l4 16M44 4l4 18" fill="none" stroke="var(--blue-500)" stroke-width="4" stroke-linecap="round"/>
+    <path d="M54 0l4 10" fill="none" stroke="var(--blue-300)" stroke-width="4" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="d-spark" viewBox="0 0 64 48">
+    <path d="M10 34l3-10M24 28l3-12M38 30l3-9" fill="none" stroke="var(--red-500)" stroke-width="3.5" stroke-linecap="round"/>
+    <path d="M52 32l4-8" fill="none" stroke="var(--yellow-300)" stroke-width="3.5" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="d-arrow" viewBox="0 0 120 60">
+    <path d="M8 44c18 4 38 2 52-8 8-6 14-14 18-22" fill="none" stroke="var(--ink)" stroke-width="3" stroke-linecap="round"/>
+    <path d="M70 8l10 4-2 12" fill="none" stroke="var(--ink)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  </symbol>
+  <symbol id="d-scribble" viewBox="0 0 80 60">
+    <path d="M14 40c2-14 16-26 30-22s20 18 8 24-30 0-28-12 18-16 28-10 12 14 4 18-18 0-16-8" fill="none" stroke="var(--ink)" stroke-width="2.2" stroke-linecap="round"/>
+  </symbol>
+</svg>
+
+<div class="wrap">
+
+  <header class="hero">
+    <p class="brand">程序员晓刘 · 图文拆解 <span>·</span> 2026.11</p>
+    <h1><span class="en">show-me</span><br><span class="marker">视觉组件库</span></h1>
+    <p class="lead">
+      把原帖 6 张图里的<b>配色、卡片、气泡、图表、图标和涂鸦</b>拆出来，<br>
+      做成一套可以直接抄的视觉零件。核心只有一句：<em class="red">能一张小图说清的，就别写一段话。</em>
+    </p>
+    <div class="tags">
+      <span class="tag"><b>6</b> 张原图 · 02–07</span>
+      <span class="tag"><b>12</b> 个色板</span>
+      <span class="tag"><b>30+</b> 组件元素</span>
+      <span class="tag"><b>0</b> 外部依赖</span>
+    </div>
+
+    <div class="gallery" aria-label="原图参考">
+      <button class="shot" data-full="refs/01.jpg" aria-label="查看 02/08 原图：show-me 是什么">
+        <img src="refs/01.jpg" alt="show-me 是什么 原图"><span>02/08 · 是什么</span>
+      </button>
+      <button class="shot" data-full="refs/02.jpg" aria-label="查看 03/08 原图：为什么要用图讲">
+        <img src="refs/02.jpg" alt="为什么要用图讲 原图"><span>03/08 · 为什么</span>
+      </button>
+      <button class="shot" data-full="refs/03.jpg" aria-label="查看 04/08 原图：怎么选对那张图">
+        <img src="refs/03.jpg" alt="怎么选对那张图 原图"><span>04/08 · 怎么选</span>
+      </button>
+      <button class="shot" data-full="refs/04.jpg" aria-label="查看 05/08 原图：哪些场景最适合">
+        <img src="refs/04.jpg" alt="哪些场景最适合 原图"><span>05/08 · 场景</span>
+      </button>
+      <button class="shot" data-full="refs/05.jpg" aria-label="查看 06/08 原图：要守住什么边界">
+        <img src="refs/05.jpg" alt="要守住什么边界 原图"><span>06/08 · 边界</span>
+      </button>
+      <button class="shot" data-full="refs/06.jpg" aria-label="查看 07/08 原图：选最小那张图">
+        <img src="refs/06.jpg" alt="选最小那张图 原图"><span>07/08 · 最小图</span>
+      </button>
+    </div>
+
+    <nav aria-label="页面目录">
+      <ul class="toc">
+        <li><a href="#palette">01 配色</a></li>
+        <li><a href="#type">02 字体</a></li>
+        <li><a href="#base">03 基础组件</a></li>
+        <li><a href="#charts">04 图表组件</a></li>
+        <li><a href="#icons">05 图标集</a></li>
+        <li><a href="#story">06 人物与涂鸦</a></li>
+        <li><a href="#compose">07 组合示例</a></li>
+        <li><a href="#code">08 代码</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+
+    <section class="section" id="palette">
+      <div class="sec-head">
+        <span class="sec-num">01</span>
+        <div>
+          <h2>配色 <small>Palette</small></h2>
+          <p>从原图取色。规律很稳定：纸白打底，浅蓝负责结构和强调，便签黄负责提示，红色只点关键词，粉 / 绿 / 橙 / 紫只做小面积标签。</p>
+        </div>
+      </div>
+
+      <div class="palette">
+        <div class="sw"><i style="background:#FDFDFB"></i><strong>纸白</strong><code>#FDFDFB</code><em>页面底色 / 卡片留白</em></div>
+        <div class="sw"><i style="background:#151B29"></i><strong>墨黑</strong><code>#151B29</code><em>标题 / 描边 / 正文</em></div>
+        <div class="sw"><i style="background:#EAF3F8"></i><strong>雾蓝</strong><code>#EAF3F8</code><em>区块浅底 / 图标底</em></div>
+        <div class="sw"><i style="background:#D0E8F8"></i><strong>天空蓝</strong><code>#D0E8F8</code><em>标签 / 起始节点</em></div>
+        <div class="sw"><i style="background:#B8D8F8"></i><strong>高亮蓝</strong><code>#B8D8F8</code><em>标题下划 / 重点底色</em></div>
+        <div class="sw"><i style="background:#3888F8"></i><strong>主蓝</strong><code>#3888F8</code><em>序号 / 结构线 / 代码符号</em></div>
+        <div class="sw"><i style="background:#F8E8B8"></i><strong>便签黄</strong><code>#F8E8B8</code><em>便签 / 结论 / 提示</em></div>
+        <div class="sw"><i style="background:#F04840"></i><strong>强调红</strong><code>#F04840</code><em>关键词 / 删除 / 变化</em></div>
+        <div class="sw"><i style="background:#F8D0D0"></i><strong>浅粉</strong><code>#F8D0D0</code><em>问题标签 / 删除底</em></div>
+        <div class="sw"><i style="background:#C8F0D8"></i><strong>薄荷绿</strong><code>#C8F0D8</code><em>新增 / 时序节点</em></div>
+        <div class="sw"><i style="background:#F8E0C8"></i><strong>奶油橙</strong><code>#F8E0C8</code><em>备选标签 / 暖色补充</em></div>
+        <div class="sw"><i style="background:#D8D0F8"></i><strong>雾紫</strong><code>#D8D0F8</code><em>备选标签 / 交互话题</em></div>
+      </div>
+
+      <div class="ratio">
+        <div class="ratio-bar" aria-label="配色比例建议">
+          <span style="width:58%;background:#FDFDFB"></span>
+          <span style="width:20%;background:#C7E1F8"></span>
+          <span style="width:8%;background:#F8E8B8"></span>
+          <span style="width:8%;background:#D8EFE0"></span>
+          <span style="width:4%;background:#151B29"></span>
+          <span style="width:2%;background:#F04840"></span>
+        </div>
+        <div class="ratio-legend">
+          <span><i style="background:#FDFDFB"></i>纸白 58%</span>
+          <span><i style="background:#C7E1F8"></i>蓝系 20%</span>
+          <span><i style="background:#F8E8B8"></i>便签黄 8%</span>
+          <span><i style="background:#D8EFE0"></i>粉绿橙紫 8%</span>
+          <span><i style="background:#151B29"></i>墨黑 4%</span>
+          <span><i style="background:#F04840"></i>强调红 2%</span>
+        </div>
+      </div>
+
+      <div class="rules-inline">
+        <div class="rule"><b>大面积只留纸白</b>不要给整页铺蓝或黄；彩色只出现在节点、标签、便签和小图标上。</div>
+        <div class="rule"><b>蓝是结构色</b>标题下划、序号、连接线、节点填充都可以蓝；正文不要整段蓝。</div>
+        <div class="rule"><b>红色是稀缺色</b>一屏最多 2–3 处，只标关键词、问题、新增 / 删除。</div>
+      </div>
+    </section>
+
+    <section class="section" id="type">
+      <div class="sec-head">
+        <span class="sec-num">02</span>
+        <div>
+          <h2>字体与文字 <small>Typography</small></h2>
+          <p>标题粗、圆、略歪；正文保持易读；代码和文件名用等宽。关键字换红色粗体，注释退成冷灰。</p>
+        </div>
+      </div>
+
+      <div class="type-grid">
+        <div class="type-card">
+          <span class="type-kicker">DISPLAY / 48–64</span>
+          <div class="type-display">为什么<span class="hl">要用图</span>讲？</div>
+          <div class="type-note">标题用圆体或手写体，字重拉到最粗；关键词可以换成红色，句末问号可以放大。</div>
+        </div>
+        <div class="type-card">
+          <span class="type-kicker">BODY / 16–20</span>
+          <p class="type-body">讲算法、重构或页面结构时，纯文字容易绕，<b class="red">一张图更清楚</b>。</p>
+          <div class="type-note">正文只做一件事：把话讲顺。红色只落在结论词上，不整段染色。</div>
+        </div>
+        <div class="type-card">
+          <span class="type-kicker">MONO / 12–13</span>
+          <div class="type-code">src/components/
+  Button.tsx   <span style="color:#9AA2B1"># 通用组件</span>
+  utils.ts     <span style="color:#9AA2B1"># 工具函数</span></div>
+          <div class="type-note">文件名、函数名、代码片段用等宽；注释弱化成灰色，避免抢正文注意力。</div>
+        </div>
+      </div>
+
+      <div class="scale" aria-label="字号阶梯">
+        <span><b>64</b> 封面主标题</span>
+        <span><b>40</b> 章节标题</span>
+        <span><b>28</b> 卡片标题</span>
+        <span><b>20</b> 小标题</span>
+        <span><b>16</b> 正文</span>
+        <span><b>13</b> 注释 / 代码</span>
+      </div>
+    </section>
+
+    <section class="section" id="base">
+      <div class="sec-head">
+        <span class="sec-num">03</span>
+        <div>
+          <h2>基础组件 <small>Cards &amp; Bubbles</small></h2>
+          <p>原图里复用率最高的四件套：编号卡片、对话气泡、便签、蓝色小标签。它们负责承载文字，也负责把语气做得轻松。</p>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <article class="card feature">
+          <span class="lab-label">C01 · 编号卡片 / 功能说明</span>
+          <div class="feature-head">
+            <span class="num">1</span>
+            <h3>开源技能库里的 AI 技能</h3>
+          </div>
+          <div class="feature-body">
+            <span class="icon-box"><svg viewBox="0 0 64 64" aria-hidden="true"><use href="#i-doc"></use></svg></span>
+            <p>
+              show-me 是 humanlayer 开源技能库中的一个 AI 技能，当前版本
+              <b class="red">v1.0.1</b>，采用 <b class="red">MIT 许可证</b>。
+            </p>
+          </div>
+          <p class="caption">编号圆形 + 粗体标题 + 左侧图标 + 正文。红字只标版本和许可证，读者一眼就能扫到关键信息。</p>
+          <div class="num-row">
+            <span class="num">1</span><span class="num">2</span><span class="num">3</span><span class="num">4</span>
+            <span>编号变体：同一蓝色圆，连续用在多张卡片</span>
+          </div>
+        </article>
+
+        <article class="card">
+          <div class="lab">
+            <div class="lab-row">
+              <span class="lab-label">C02 · 对话气泡 / 用户输入</span>
+              <span class="bubble">show <u>me</u></span>
+            </div>
+            <div class="lab-row">
+              <span class="lab-label">C03 · 便签 / 结论与提示</span>
+              <span class="note">正在聊的话题</span>
+            </div>
+            <div class="lab-row">
+              <span class="lab-label">C04 · 标签 / 图表类型</span>
+              <span class="pill">调用树示例</span>
+              <span class="pill" style="background:var(--yellow-200)">刚够用</span>
+            </div>
+            <div class="lab-row">
+              <span class="lab-label">C05 · 黄色标注 / 补充一句话</span>
+              <span class="callout">一眼看清执行链路！</span>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="charts">
+      <div class="sec-head">
+        <span class="sec-num">04</span>
+        <div>
+          <h2>图表组件 <small>Diagrams</small></h2>
+          <p>所有图表都套在同一个“浏览器窗口”外壳里：三个交通灯圆点 + 一条黑线 + 圆角白底。里面可以是调用树、时序图、diff 或文件树。</p>
+        </div>
+      </div>
+
+      <div class="chart-grid">
+
+        <div class="panel span-7">
+          <div class="panel-head">
+            <span class="kicker">C06</span>
+            <h3>调用树窗口</h3>
+            <span class="chip">调用关系</span>
+          </div>
+          <div class="window">
+            <div class="window-bar">
+              <i class="wdot r"></i><i class="wdot y"></i><i class="wdot g"></i>
+              <span class="wtitle">调用树示例</span>
+            </div>
+            <div class="window-body">
+              <span class="window-note">一眼看清<br>执行链路！</span>
+              <svg class="diagram" viewBox="0 0 560 330" role="img" aria-label="调用树示例">
+                <defs>
+                  <marker id="treeArrow" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+                    <path d="M0 0l8 4.5-8 4.5z" fill="var(--ink)"/>
+                  </marker>
+                </defs>
+                <path d="M280 86v20h50v19" fill="none" stroke="var(--ink)" stroke-width="2.5" marker-end="url(#treeArrow)"/>
+                <path d="M330 161v20h40v19" fill="none" stroke="var(--ink)" stroke-width="2.5" marker-end="url(#treeArrow)"/>
+                <path d="M370 236v20h30v19" fill="none" stroke="var(--ink)" stroke-width="2.5" marker-end="url(#treeArrow)"/>
+                <rect x="195" y="50" width="170" height="36" rx="7" fill="var(--blue-100)" stroke="var(--ink)" stroke-width="2.5"/>
+                <text x="280" y="73" text-anchor="middle" font-size="16" font-weight="700">submitForm()</text>
+                <rect x="240" y="125" width="180" height="36" rx="7" fill="var(--yellow-200)" stroke="var(--ink)" stroke-width="2.5"/>
+                <text x="330" y="148" text-anchor="middle" font-size="16" font-weight="700">createSession()</text>
+                <rect x="275" y="200" width="190" height="36" rx="7" fill="var(--green-200)" stroke="var(--ink)" stroke-width="2.5"/>
+                <text x="370" y="223" text-anchor="middle" font-size="16" font-weight="700">persistPrompt()</text>
+                <rect x="320" y="275" width="160" height="36" rx="7" fill="var(--blue-200)" stroke="var(--ink)" stroke-width="2.5"/>
+                <text x="400" y="298" text-anchor="middle" font-size="16" font-weight="700">launchAgent()</text>
+                <path d="M90 40l4 12M108 28l4 14M126 18l4 10" fill="none" stroke="var(--blue-500)" stroke-width="4" stroke-linecap="round"/>
+              </svg>
+            </div>
+          </div>
+          <p class="caption">节点统一 2.5px 黑描边、圆角 7px；父节点浅蓝、普通节点黄、关键节点绿。箭头用折线，不用直线。</p>
+        </div>
+
+        <div class="panel span-5">
+          <div class="panel-head">
+            <span class="kicker">C07</span>
+            <h3>diff 对比</h3>
+            <span class="chip">改了什么</span>
+          </div>
+          <div class="diff" role="img" aria-label="代码 diff 对比">
+            <div class="diff-col bad">
+              <div class="diff-head">旧 · 删除</div>
+              <div class="diff-row"><b>-</b><span>const x = 1;</span></div>
+              <div class="diff-row"><b>-</b><span>if (loading) {</span></div>
+              <div class="diff-row"><b>-</b><span>&nbsp;&nbsp;return null;</span></div>
+              <div class="diff-row"><b>-</b><span>}</span></div>
+              <div class="diff-row"><b>-</b><span>return x;</span></div>
+            </div>
+            <div class="diff-col good">
+              <div class="diff-head">新 · 新增</div>
+              <div class="diff-row"><b>+</b><span>const x = 2;</span></div>
+              <div class="diff-row"><b>+</b><span>if (!ready) {</span></div>
+              <div class="diff-row"><b>+</b><span>&nbsp;&nbsp;return &lt;Skeleton /&gt;;</span></div>
+              <div class="diff-row"><b>+</b><span>}</span></div>
+              <div class="diff-row"><b>+</b><span>return x;</span></div>
+            </div>
+          </div>
+          <div class="diff-foot">
+            <span>3 files changed</span>
+            <span class="plus">+12</span>
+            <span class="minus">−9</span>
+            <span>只展示变化行</span>
+          </div>
+          <p class="caption">左红右绿、左右对齐；只展示变化行，不把整份文件搬上来。</p>
+        </div>
+
+        <div class="panel span-5">
+          <div class="panel-head">
+            <span class="kicker">C08</span>
+            <h3>浅层文件树</h3>
+            <span class="chip">项目结构</span>
+          </div>
+          <ul class="filetree">
+            <li><svg class="mini-ico" viewBox="0 0 64 64" aria-hidden="true"><use href="#i-folder"></use></svg><span class="fname">project/</span></li>
+            <li>
+              <ul>
+                <li><svg class="mini-ico" viewBox="0 0 64 64" aria-hidden="true"><use href="#i-folder"></use></svg><span class="fname">src/</span><span class="comment"># 核心业务代码</span></li>
+                <li><svg class="mini-ico" viewBox="0 0 64 64" aria-hidden="true"><use href="#i-folder"></use></svg><span class="fname">components/</span><span class="comment"># 通用前端组件</span></li>
+                <li><svg class="mini-ico" viewBox="0 0 64 64" aria-hidden="true"><use href="#i-folder"></use></svg><span class="fname">services/</span><span class="comment"># 接口与业务服务</span></li>
+                <li><svg class="mini-ico" viewBox="0 0 64 64" aria-hidden="true"><use href="#i-folder"></use></svg><span class="fname">utils/</span><span class="comment"># 工具函数</span></li>
+                <li><svg class="mini-ico" viewBox="0 0 64 64" aria-hidden="true"><use href="#i-folder"></use></svg><span class="fname">tests/</span><span class="comment"># 测试用例</span></li>
+              </ul>
+            </li>
+          </ul>
+          <p class="caption">黄色文件夹 + 等宽文件名 + 灰色职责注释。只画到第二层，避免目录树失控。</p>
+        </div>
+
+        <div class="panel span-7">
+          <div class="panel-head">
+            <span class="kicker">C09</span>
+            <h3>时序图窗口</h3>
+            <span class="chip">交互与数据流</span>
+          </div>
+          <div class="window">
+            <div class="window-bar">
+              <i class="wdot r"></i><i class="wdot y"></i><i class="wdot g"></i>
+              <span class="wtitle">前后端交互</span>
+            </div>
+            <div class="window-body">
+              <svg class="diagram" viewBox="0 0 560 300" role="img" aria-label="前后端交互时序图">
+                <defs>
+                  <marker id="seqArrow" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+                    <path d="M0 0l8 4.5-8 4.5z" fill="var(--ink)"/>
+                  </marker>
+                </defs>
+                <rect x="38" y="16" width="104" height="34" rx="8" fill="var(--blue-200)" stroke="var(--ink)" stroke-width="2.5"/>
+                <text x="90" y="38" text-anchor="middle" font-size="14" font-weight="700">用户</text>
+                <rect x="228" y="16" width="104" height="34" rx="8" fill="var(--yellow-200)" stroke="var(--ink)" stroke-width="2.5"/>
+                <text x="280" y="38" text-anchor="middle" font-size="14" font-weight="700">前端界面</text>
+                <rect x="418" y="16" width="104" height="34" rx="8" fill="var(--green-200)" stroke="var(--ink)" stroke-width="2.5"/>
+                <text x="470" y="38" text-anchor="middle" font-size="14" font-weight="700">后端服务</text>
+                <path d="M90 50v232M280 50v232M470 50v232" fill="none" stroke="#A9B2C0" stroke-width="1.8" stroke-dasharray="5 5"/>
+                <path d="M90 95h184" fill="none" stroke="var(--ink)" stroke-width="2.5" marker-end="url(#seqArrow)"/>
+                <text x="182" y="87" text-anchor="middle" font-size="11">1. 提交请求</text>
+                <path d="M280 140h184" fill="none" stroke="var(--ink)" stroke-width="2.5" marker-end="url(#seqArrow)"/>
+                <text x="372" y="132" text-anchor="middle" font-size="11">2. 处理请求</text>
+                <path d="M470 195h-184" fill="none" stroke="var(--ink)" stroke-width="2.5" marker-end="url(#seqArrow)"/>
+                <text x="378" y="187" text-anchor="middle" font-size="11">3. 返回数据</text>
+                <path d="M280 250h-184" fill="none" stroke="var(--ink)" stroke-width="2.5" marker-end="url(#seqArrow)"/>
+                <text x="188" y="242" text-anchor="middle" font-size="11">4. 渲染界面</text>
+                <path d="M500 72l4 12M518 60l4 14" fill="none" stroke="var(--blue-500)" stroke-width="4" stroke-linecap="round"/>
+              </svg>
+            </div>
+          </div>
+          <p class="caption">三个角色用蓝 / 黄 / 绿区分；生命线虚线，消息线实线；编号写在箭头上方。</p>
+        </div>
+
+        <div class="panel span-12">
+          <div class="panel-head">
+            <span class="kicker">C10</span>
+            <h3>话题 → 图表 决策流</h3>
+            <span class="chip">选哪张图</span>
+          </div>
+          <div class="flow">
+            <div class="flow-start">你在聊<br>什么话题？</div>
+            <div class="flow-list">
+              <div class="flow-row">
+                <span class="qtag q1">逻辑和算法怎么做？</span>
+                <span class="arrow">→</span>
+                <span class="mini"><svg viewBox="0 0 64 64" aria-hidden="true"><use href="#i-doc"></use></svg>伪代码</span>
+                <span class="flow-desc">用 <em>伪代码</em> 展示主要逻辑和步骤。</span>
+              </div>
+              <div class="flow-row">
+                <span class="qtag q2">运行时怎么调用？</span>
+                <span class="arrow">→</span>
+                <span class="mini"><svg viewBox="0 0 64 64" aria-hidden="true"><use href="#i-calltree"></use></svg>调用树</span>
+                <span class="flow-desc">用 <em>调用树</em> 展示调用顺序和层级。</span>
+              </div>
+              <div class="flow-row">
+                <span class="qtag q3">界面长什么样？</span>
+                <span class="arrow">→</span>
+                <span class="mini"><svg viewBox="0 0 64 64" aria-hidden="true"><use href="#i-componenttree"></use></svg>组件树</span>
+                <span class="flow-desc">用 <em>组件树</em> 展示 UI 层级与关系。</span>
+              </div>
+              <div class="flow-row">
+                <span class="qtag q4">每个文件负责什么？</span>
+                <span class="arrow">→</span>
+                <span class="mini"><svg viewBox="0 0 64 64" aria-hidden="true"><use href="#i-filetree"></use></svg>文件树</span>
+                <span class="flow-desc">用 <em>文件树</em> 展示目录结构与职责。</span>
+              </div>
+              <div class="flow-row">
+                <span class="qtag q5">组件之间怎么交互？</span>
+                <span class="arrow">→</span>
+                <span class="mini"><svg viewBox="0 0 64 64" aria-hidden="true"><use href="#i-mermaid"></use></svg>时序图</span>
+                <span class="flow-desc">用 <em>时序图</em> 展示交互与数据流向。</span>
+              </div>
+              <div class="flow-row">
+                <span class="qtag q6">改了什么？</span>
+                <span class="arrow">→</span>
+                <span class="mini"><svg viewBox="0 0 64 64" aria-hidden="true"><use href="#i-diff"></use></svg>diff 对比</span>
+                <span class="flow-desc">用 <em>diff</em> 只展示变化的部分。</span>
+              </div>
+            </div>
+          </div>
+          <p class="caption">原图 04/08 的核心结构：左侧一个问题框，中间六条彩色问题标签，右侧固定“小图标 + 类型 + 一句话解释”。颜色只用于区分问题，不承载额外含义。</p>
+        </div>
+
+      </div>
+    </section>
+
+    <section class="section" id="icons">
+      <div class="sec-head">
+        <span class="sec-num">05</span>
+        <div>
+          <h2>图标集 <small>Icon Set</small></h2>
+          <p>统一 64 视窗、2.5–3px 黑描边、马卡龙填色。同一套图标可以在大卡片里当主图，也能缩到 26px 放进决策流。</p>
+        </div>
+      </div>
+
+      <div class="icon-grid">
+        <div class="icon-tile"><span class="ico-wrap" style="--tile:var(--paper-2)"><svg viewBox="0 0 64 64" aria-hidden="true"><use href="#i-doc"></use></svg></span><strong>伪代码</strong><small>讲清逻辑和步骤</small></div>
+        <div class="icon-tile"><span class="ico-wrap" style="--tile:var(--blue-100)"><svg viewBox="0 0 64 64" aria-hidden="true"><use href="#i-calltree"></use></svg></span><strong>调用树</strong><small>函数调用与顺序</small></div>
+        <div class="icon-tile"><span class="ico-wrap" style="--tile:var(--green-200)"><svg viewBox="0 0 64 64" aria-hidden="true"><use href="#i-componenttree"></use></svg></span><strong>组件树</strong><small>UI 层级与关系</small></div>
+        <div class="icon-tile"><span class="ico-wrap" style="--tile:var(--yellow-200)"><svg viewBox="0 0 64 64" aria-hidden="true"><use href="#i-filetree"></use></svg></span><strong>文件树</strong><small>目录结构与职责</small></div>
+        <div class="icon-tile"><span class="ico-wrap" style="--tile:var(--red-200)"><svg viewBox="0 0 64 64" aria-hidden="true"><use href="#i-mermaid"></use></svg></span><strong>时序图</strong><small>交互与数据流</small></div>
+        <div class="icon-tile"><span class="ico-wrap" style="--tile:var(--paper-2)"><svg viewBox="0 0 64 64" aria-hidden="true"><use href="#i-diff"></use></svg></span><strong>diff</strong><small>新增与删除</small></div>
+        <div class="icon-tile"><span class="ico-wrap" style="--tile:var(--blue-100)"><svg viewBox="0 0 64 64" aria-hidden="true"><use href="#i-html"></use></svg></span><strong>HTML</strong><small>图表装不下时兜底</small></div>
+        <div class="icon-tile"><span class="ico-wrap" style="--tile:var(--yellow-200)"><svg viewBox="0 0 64 64" aria-hidden="true"><use href="#i-folder"></use></svg></span><strong>文件夹</strong><small>文件树里的目录节点</small></div>
+        <div class="icon-tile"><span class="ico-wrap" style="--tile:var(--blue-100)"><svg viewBox="0 0 64 64" aria-hidden="true"><use href="#i-code"></use></svg></span><strong>代码</strong><small>HTML / 源文件标记</small></div>
+        <div class="icon-tile"><span class="ico-wrap" style="--tile:var(--paper-2)"><svg viewBox="0 0 64 64" aria-hidden="true"><use href="#i-bulb"></use></svg></span><strong>灯泡</strong><small>结论 / 提示 / 灵感</small></div>
+        <div class="icon-tile"><span class="ico-wrap" style="--tile:var(--blue-100)"><svg viewBox="0 0 64 64" aria-hidden="true"><use href="#i-clipboard"></use></svg></span><strong>剪贴板</strong><small>SKILL.md 的载体</small></div>
+        <div class="icon-tile"><span class="ico-wrap" style="--tile:var(--red-200)"><svg viewBox="0 0 64 64" aria-hidden="true"><use href="#i-xnode"></use></svg></span><strong>删除节点</strong><small>虚线 + 红叉 = 去掉</small></div>
+      </div>
+    </section>
+
+    <section class="section" id="story">
+      <div class="sec-head">
+        <span class="sec-num">06</span>
+        <div>
+          <h2>人物与涂鸦 <small>Character &amp; Doodles</small></h2>
+          <p>插画不是装饰，是语气。固定一个“黑发 + 蓝卫衣 + 猫脸电脑”的人物，再配一点蓝色笔画、黄色便签和手绘箭头，页面就活了。</p>
+        </div>
+      </div>
+
+      <div class="story">
+        <div class="story-card blue">
+          <svg class="boy" viewBox="0 0 260 230" role="img" aria-label="黑发蓝卫衣男孩与猫脸电脑">
+            <ellipse cx="132" cy="208" rx="92" ry="9" fill="var(--blue-200)" opacity=".55"/>
+            <path d="M74 199c-2-31 5-57 19-70 10-9 22-14 38-14s29 5 39 14c14 13 20 39 18 70z" fill="#A9C9F2" stroke="var(--ink)" stroke-width="3.5" stroke-linejoin="round"/>
+            <path d="M96 123c2 12 14 21 35 21s33-9 35-21c-9-7-20-11-35-11s-26 4-35 11z" fill="#8FB8EC" stroke="var(--ink)" stroke-width="3.5" stroke-linejoin="round"/>
+            <path d="M117 112v13M145 112v13" fill="none" stroke="var(--ink)" stroke-width="3"/>
+            <ellipse cx="131" cy="82" rx="35" ry="33" fill="#fff" stroke="var(--ink)" stroke-width="3.5"/>
+            <path d="M96 82c-6-2-8 8-2 10M166 82c6-2 8 8 2 10" fill="none" stroke="var(--ink)" stroke-width="3" stroke-linecap="round"/>
+            <path d="M95 80c-5-28 13-44 36-44s41 16 36 44c-4-7-9-9-11-15-4 7-10 9-15 7-5 5-12 7-16 5-5 4-11 4-15 1-4 6-9 7-15 2z" fill="var(--ink)" stroke="var(--ink)" stroke-width="2" stroke-linejoin="round"/>
+            <path d="M117 85c2-4 6-4 8 0M137 85c2-4 6-4 8 0" fill="none" stroke="var(--ink)" stroke-width="3" stroke-linecap="round"/>
+            <ellipse cx="113" cy="95" rx="6" ry="3" fill="var(--red-200)"/>
+            <ellipse cx="149" cy="95" rx="6" ry="3" fill="var(--red-200)"/>
+            <path d="M127 97c2 3 6 3 8 0" fill="none" stroke="var(--ink)" stroke-width="2.5" stroke-linecap="round"/>
+            <path d="M166 113c9-2 14-8 14-15 0-5-4-8-8-6l-6 3" fill="#fff" stroke="var(--ink)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            <polygon points="120,137 206,143 210,181 114,177" fill="#F7F9FB" stroke="var(--ink)" stroke-width="3.5" stroke-linejoin="round"/>
+            <path d="M152 154l7-6 7 7M177 156l7-6 7 7" fill="none" stroke="var(--ink)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="159" cy="160" r="2.2" fill="var(--ink)"/>
+            <circle cx="184" cy="162" r="2.2" fill="var(--ink)"/>
+            <path d="M170 166c1.5 2 4.5 2 6 0M154 165l-7 2M156 170l-6 4M190 168l7 2M188 173l6 4" fill="none" stroke="var(--ink)" stroke-width="2" stroke-linecap="round"/>
+            <path d="M58 190l153 2-13 15H73z" fill="#E8EBEF" stroke="var(--ink)" stroke-width="3.5" stroke-linejoin="round"/>
+            <path d="M170 190l-8 10M100 192l6 10" fill="none" stroke="var(--ink)" stroke-width="2" opacity=".35"/>
+            <path d="M60 60l4 11M76 49l4 13M92 44l4 9" fill="none" stroke="var(--blue-500)" stroke-width="4" stroke-linecap="round"/>
+            <path d="M196 104l4 12M210 94l4 13" fill="none" stroke="var(--blue-500)" stroke-width="4" stroke-linecap="round"/>
+          </svg>
+          <div class="fact-row">
+            <span class="fact">黑发 · 蓝卫衣</span>
+            <span class="fact">猫脸电脑</span>
+            <span class="fact">三种表情复用</span>
+          </div>
+          <p class="caption">人物只换表情和手势：疑惑、思考、讲解。身体和电脑保持不变，读者会认人，也会认这套图。</p>
+        </div>
+
+        <div class="story-card">
+          <svg class="tree-svg" viewBox="0 0 440 280" role="img" aria-label="修剪树：多余枝叶与刚好够用">
+            <ellipse cx="142" cy="242" rx="88" ry="8" fill="var(--blue-100)"/>
+            <ellipse cx="342" cy="242" rx="55" ry="6" fill="var(--blue-100)"/>
+            <path d="M142 242c0-56 1-99-2-146M140 150c-20-20-40-27-62-50M140 130c22-18 42-25 60-47M140 181c-26-9-44-21-57-37M141 197c26-7 46-18 58-31M138 106c-14-14-22-21-26-35M143 96c14-14 24-19 32-31" fill="none" stroke="var(--ink)" stroke-width="4.5" stroke-linecap="round"/>
+            <g fill="#fff" stroke="var(--ink)" stroke-width="2.4">
+              <ellipse cx="70" cy="94" rx="12" ry="7" transform="rotate(-40 70 94)"/>
+              <ellipse cx="58" cy="112" rx="11" ry="6" transform="rotate(-20 58 112)"/>
+              <ellipse cx="196" cy="75" rx="12" ry="7" transform="rotate(38 196 75)"/>
+              <ellipse cx="212" cy="92" rx="11" ry="6" transform="rotate(30 212 92)"/>
+              <ellipse cx="74" cy="140" rx="11" ry="6" transform="rotate(-24 74 140)"/>
+              <ellipse cx="194" cy="162" rx="12" ry="7" transform="rotate(26 194 162)"/>
+              <ellipse cx="104" cy="62" rx="11" ry="6" transform="rotate(-55 104 62)"/>
+              <ellipse cx="172" cy="56" rx="11" ry="6" transform="rotate(51 172 56)"/>
+              <ellipse cx="126" cy="44" rx="12" ry="7" transform="rotate(-10 126 44)"/>
+              <ellipse cx="152" cy="142" rx="11" ry="6" transform="rotate(18 152 142)"/>
+              <ellipse cx="86" cy="182" rx="11" ry="6" transform="rotate(-38 86 182)"/>
+              <ellipse cx="186" cy="206" rx="11" ry="6" transform="rotate(31 186 206)"/>
+            </g>
+            <g fill="var(--blue-100)" stroke="var(--ink)" stroke-width="2.4">
+              <ellipse cx="112" cy="84" rx="12" ry="7" transform="rotate(-28 112 84)"/>
+              <ellipse cx="158" cy="74" rx="11" ry="6" transform="rotate(22 158 74)"/>
+              <ellipse cx="108" cy="164" rx="11" ry="6" transform="rotate(-46 108 164)"/>
+              <ellipse cx="166" cy="188" rx="11" ry="6" transform="rotate(42 166 188)"/>
+            </g>
+            <path d="M134 224l-16 10M128 210l-19 4" fill="none" stroke="var(--ink)" stroke-width="2.2" stroke-linecap="round"/>
+            <ellipse cx="112" cy="238" rx="9" ry="5" fill="#fff" stroke="var(--ink)" stroke-width="2.2" transform="rotate(-24 112 238)"/>
+            <ellipse cx="118" cy="252" rx="8" ry="4.5" fill="var(--blue-100)" stroke="var(--ink)" stroke-width="2.2" transform="rotate(12 118 252)"/>
+
+            <path d="M342 242V150M342 190c-16-13-27-20-38-24M342 176c16-12 27-18 38-22M342 160c-12-12-19-18-24-28" fill="none" stroke="var(--ink)" stroke-width="4" stroke-linecap="round"/>
+            <g fill="#fff" stroke="var(--ink)" stroke-width="2.2">
+              <ellipse cx="300" cy="160" rx="10" ry="6" transform="rotate(-35 300 160)"/>
+              <ellipse cx="385" cy="150" rx="10" ry="6" transform="rotate(30 385 150)"/>
+              <ellipse cx="317" cy="127" rx="10" ry="6" transform="rotate(-50 317 127)"/>
+              <ellipse cx="350" cy="140" rx="10" ry="6" transform="rotate(15 350 140)"/>
+              <ellipse cx="365" cy="170" rx="10" ry="6" transform="rotate(40 365 170)"/>
+              <ellipse cx="320" cy="184" rx="9" ry="5.5" transform="rotate(-20 320 184)"/>
+            </g>
+            <ellipse cx="342" cy="242" rx="30" ry="3" fill="var(--ink)" opacity=".18"/>
+
+            <path d="M242 170c20-2 38-6 54-14" fill="none" stroke="var(--ink)" stroke-width="2.4" stroke-dasharray="6 6"/>
+            <path d="M288 147l10 7-6 10" fill="none" stroke="var(--ink)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+
+            <g transform="rotate(-2 90 36)">
+              <rect x="26" y="14" width="122" height="38" rx="9" fill="var(--yellow-200)" stroke="var(--ink)" stroke-width="2.2"/>
+              <text x="87" y="39" text-anchor="middle" class="svg-label" style="font-size:15px">多余枝叶</text>
+            </g>
+            <g transform="rotate(2 360 40)">
+              <rect x="300" y="18" width="118" height="38" rx="9" fill="var(--yellow-200)" stroke="var(--ink)" stroke-width="2.2"/>
+              <text x="359" y="43" text-anchor="middle" class="svg-label" style="font-size:15px">刚好够用</text>
+            </g>
+            <path d="M148 52c12 4 20 12 24 24" fill="none" stroke="var(--ink)" stroke-width="2" stroke-linecap="round"/>
+            <path d="M356 56c-4 10-8 18-12 24" fill="none" stroke="var(--ink)" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <div class="fact-row">
+            <span class="fact">左密右疏</span>
+            <span class="fact">虚线箭头</span>
+            <span class="fact">去掉无关枝叶</span>
+          </div>
+          <p class="caption">修剪树是“边界”的视觉隐喻：左边保留所有枝叶，右边只留刚好够用的部分。配套文案永远是“最小视图”。</p>
+        </div>
+      </div>
+
+      <div class="doodle-grid">
+        <div class="doodle">
+          <svg viewBox="0 0 64 48" aria-hidden="true"><use href="#d-ticks"></use></svg>
+          <div><b>蓝色强调线</b><small>标题旁 / 画面角落</small></div>
+        </div>
+        <div class="doodle">
+          <svg viewBox="0 0 64 48" aria-hidden="true"><use href="#d-spark"></use></svg>
+          <div><b>粉黄小斜线</b><small>给标签加一点动势</small></div>
+        </div>
+        <div class="doodle">
+          <svg viewBox="0 0 120 60" aria-hidden="true"><use href="#d-arrow"></use></svg>
+          <div><b>手绘箭头</b><small>连接前后两个状态</small></div>
+        </div>
+        <div class="doodle">
+          <svg viewBox="0 0 80 60" aria-hidden="true"><use href="#d-scribble"></use></svg>
+          <div><b>乱线团</b><small>表示“文字容易绕”</small></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="compose">
+      <div class="sec-head">
+        <span class="sec-num">07</span>
+        <div>
+          <h2>组合示例 <small>Composition</small></h2>
+          <p>把前面的零件拼成一张 07/08 风格的小海报：大标题 + 蓝色下划 + 灯泡 + 黄色便签 + 四个图标。没有新组件，只是重新排列。</p>
+        </div>
+      </div>
+
+      <div class="compose">
+        <div class="poster">
+          <span class="poster-kicker">SHOW-ME · VISUAL CHEAT SHEET</span>
+          <h3>记住：选<em class="red">最小</em>那张图</h3>
+          <div class="poster-rule"></div>
+
+          <div class="poster-mid">
+            <svg viewBox="0 0 64 64" aria-hidden="true"><use href="#i-bulb"></use></svg>
+            <p>show-me 用<em class="red" style="font-style:normal">图表</em>代替长文，<br>让正在聊的话题<em class="red" style="font-style:normal">一眼看懂</em>。</p>
+          </div>
+
+          <div class="poster-label"><span class="pill">根据内容选择合适的可视化形式</span></div>
+
+          <div class="poster-icons">
+            <div class="p-icon"><svg viewBox="0 0 64 64" aria-hidden="true"><use href="#i-doc"></use></svg><b>伪代码</b><small>讲清逻辑</small></div>
+            <div class="p-icon"><svg viewBox="0 0 64 64" aria-hidden="true"><use href="#i-calltree"></use></svg><b>调用树</b><small>调用顺序</small></div>
+            <div class="p-icon"><svg viewBox="0 0 64 64" aria-hidden="true"><use href="#i-componenttree"></use></svg><b>组件树</b><small>UI 层级</small></div>
+            <div class="p-icon"><svg viewBox="0 0 64 64" aria-hidden="true"><use href="#i-filetree"></use></svg><b>文件树</b><small>目录职责</small></div>
+          </div>
+
+          <div class="poster-foot">
+            <span class="poster-scribble"><svg viewBox="0 0 80 60" aria-hidden="true"><use href="#d-scribble"></use></svg>一大段文字…</span>
+            <svg class="poster-arrow" viewBox="0 0 120 60" aria-hidden="true"><use href="#d-arrow"></use></svg>
+            <span class="pill">能一张小图说清的，就别写一段话</span>
+          </div>
+        </div>
+
+        <div class="rules">
+          <h3>组合的四条规矩</h3>
+          <ol>
+            <li>一屏只放<b>一个主动作</b>：要么一张大图，要么一组卡片。</li>
+            <li>每张卡片最多 <b class="red">1 处红色</b>，其余信息用墨黑和灰。</li>
+            <li>黄色便签只放<b>结论、提示、旁白</b>，不要用来放正文。</li>
+            <li>图标统一<b>粗描边 + 马卡龙填充</b>，尺寸可以变，线宽比例不变。</li>
+          </ol>
+          <p class="caption" style="margin-top:14px">这张小海报就是活例子：标题、下划、灯泡、便签、四个图标、乱线、箭头，全部来自前面的组件库。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="code">
+      <div class="sec-head">
+        <span class="sec-num">08</span>
+        <div>
+          <h2>代码与复用 <small>CSS &amp; HTML</small></h2>
+          <p>整页零依赖。核心就是一组 CSS 变量 + 几个结构类。复制下面两段，就能在新页面里复刻同样的配色和卡片。</p>
+        </div>
+      </div>
+
+      <div class="code-grid">
+        <div class="code-card">
+          <div class="code-head"><b>tokens.css</b><button class="copy" data-copy="code-css">复制</button></div>
+          <pre><code id="code-css">:root{
+  --paper:#FDFDFB;
+  --ink:#151B29;
+  --blue-100:#EAF3F8;
+  --blue-200:#D0E8F8;
+  --blue-300:#B8D8F8;
+  --blue-500:#3888F8;
+  --yellow-200:#F8E8B8;
+  --red-200:#F8D0D0;
+  --red-500:#F04840;
+  --green-200:#C8F0D8;
+  --orange-200:#F8E0C8;
+  --purple-200:#D8D0F8;
+  --font-title:"Yuanti SC","Hannotate SC",
+    "PingFang SC",sans-serif;
+  --font-mono:"SFMono-Regular",Menlo,
+    Consolas,monospace;
+}</code></pre>
+        </div>
+
+        <div class="code-card">
+          <div class="code-head"><b>component.html</b><button class="copy" data-copy="code-html">复制</button></div>
+          <pre><code id="code-html">&lt;article class="card feature"&gt;
+  &lt;div class="feature-head"&gt;
+    &lt;span class="num"&gt;1&lt;/span&gt;
+    &lt;h3&gt;开源技能库里的 AI 技能&lt;/h3&gt;
+  &lt;/div&gt;
+  &lt;div class="feature-body"&gt;
+    &lt;span class="icon-box"&gt;
+      &lt;svg viewBox="0 0 64 64"&gt;
+        &lt;use href="#i-doc"&gt;&lt;/use&gt;
+      &lt;/svg&gt;
+    &lt;/span&gt;
+    &lt;p&gt;
+      show-me 当前版本
+      &lt;b class="red"&gt;v1.0.1&lt;/b&gt;，
+      采用 &lt;b class="red"&gt;MIT 许可证&lt;/b&gt;。
+    &lt;/p&gt;
+  &lt;/div&gt;
+&lt;/article&gt;</code></pre>
+        </div>
+      </div>
+
+      <div class="rules" style="margin-top:16px">
+        <h3>复用提示</h3>
+        <ol>
+          <li><b>先定纸白和墨黑</b>，再把蓝、黄、红作为强调色加进去；不要反过来先铺彩色。</li>
+          <li><b>字体不必完全一致</b>：圆体 / 手写体 / 系统黑体都能用，关键是标题够粗、笔画够圆。</li>
+          <li><b>图标可以换</b>：只要保持 64 视窗、粗描边、马卡龙填充，整套气质就不会散。</li>
+          <li><b>红色要克制</b>：把它当荧光笔，不要当正文色。</li>
+        </ol>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <div>
+      <b>SHOW-ME VISUAL KIT</b><br>
+      拆自《一句话，让 AI 把复杂代码画给你看》· 程序员晓刘<br>
+      原帖共 8 页，本地 6 页（02–07）；03.webp 原文件损坏，页面使用重新拉取的原图。
+    </div>
+    <div style="text-align:right">
+      <b>6</b> 张原图 · <b>12</b> 个色板 · <b>30+</b> 组件元素<br>
+      纯 HTML + CSS + SVG · 无外部依赖<br>
+      <a href="https://www.xiaohongshu.com/discovery/item/6ae5f8b3000000000e0260d7" target="_blank" rel="noreferrer">查看原帖</a>
+    </div>
+  </footer>
+
+</div>
+
+<dialog id="lightbox" aria-label="原图预览">
+  <div class="lb-inner">
+    <button class="lb-close" type="button" aria-label="关闭">×</button>
+    <img src="refs/01.jpg" alt="原图预览">
+  </div>
+</dialog>
+
+<script>
+  function copyText(text) {
+    if (navigator.clipboard && window.isSecureContext) {
+      return navigator.clipboard.writeText(text);
+    }
+    return new Promise(function (resolve, reject) {
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      var ok = document.execCommand('copy');
+      ta.remove();
+      ok ? resolve() : reject(new Error('copy failed'));
+    });
+  }
+
+  document.querySelectorAll('[data-copy]').forEach(function (btn) {
+    btn.addEventListener('click', async function () {
+      var target = document.getElementById(btn.dataset.copy);
+      if (!target) return;
+      var reset = 1600;
+      try {
+        await copyText(target.innerText);
+        btn.textContent = '已复制';
+      } catch (err) {
+        var range = document.createRange();
+        range.selectNodeContents(target);
+        var sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+        btn.textContent = '已选中，按 ⌘C';
+        reset = 2600;
+      }
+      setTimeout(function () { btn.textContent = '复制'; }, reset);
+    });
+  });
+
+  var dlg = document.getElementById('lightbox');
+  var dlgImg = dlg.querySelector('img');
+  document.querySelectorAll('.shot').forEach(function (shot) {
+    shot.addEventListener('click', function () {
+      dlgImg.src = shot.dataset.full;
+      dlgImg.alt = shot.querySelector('img').alt;
+      dlg.showModal();
+    });
+  });
+  dlg.querySelector('.lb-close').addEventListener('click', function () { dlg.close(); });
+  dlg.addEventListener('click', function (e) {
+    if (e.target === dlg) dlg.close();
+  });
+</script>
+
+</body>
+</html>
