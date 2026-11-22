@@ -383,6 +383,10 @@
     border-top-color: var(--human);
   }
 
+  .legend-line.host {
+    border-top-color: #0e6b58;
+  }
+
   .stepper {
     display: inline-flex;
     align-items: center;
@@ -576,6 +580,102 @@
 
   .phase.branch .phase-desc {
     color: color-mix(in srgb, var(--human) 85%, #222);
+  }
+
+  /* Interactive scenario switcher for ACP extended flows */
+  .phase.scenarios .phase-header {
+    background: color-mix(in srgb, var(--accent-soft) 65%, #fff);
+    border-color: var(--accent-border);
+    border-style: dashed;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .phase-header-top {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .phase.scenarios .phase-tag {
+    color: var(--accent-deep);
+    border-color: var(--accent-border);
+  }
+
+  .scenario-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .scenario-pill {
+    border: 1px solid var(--line-strong);
+    background: var(--surface);
+    color: var(--ink-2);
+    border-radius: 999px;
+    padding: 5px 11px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.14s ease, border-color 0.14s ease, color 0.14s ease, box-shadow 0.14s ease;
+  }
+
+  .scenario-pill:hover:not(.on) {
+    border-color: var(--accent);
+    color: var(--ink);
+  }
+
+  .scenario-pill.on {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+    box-shadow: 0 1px 4px color-mix(in srgb, var(--accent) 26%, transparent);
+  }
+
+  .scenario-count {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    font-weight: 700;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: var(--surface-subtle);
+    color: var(--ink-3);
+  }
+
+  .scenario-pill.on .scenario-count {
+    background: rgba(255, 255, 255, 0.22);
+    color: #fff;
+  }
+
+  .scenario-brief {
+    margin: 0;
+    padding: 8px 11px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.82);
+    border: 1px solid var(--accent-border);
+    font-size: 12.5px;
+    color: var(--ink-2);
+    line-height: 1.55;
+  }
+
+  .scenario-brief strong {
+    color: var(--accent-deep);
+  }
+
+  .scenario-brief code {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    background: var(--accent-soft);
+    color: var(--accent-deep);
+    padding: 1px 5px;
+    border-radius: 4px;
   }
 
   /* Message step row */
@@ -801,6 +901,18 @@
     color: var(--human);
     background: var(--human-soft);
     border-color: var(--human-border);
+  }
+
+  .kind-tag.host {
+    color: #0e6b58;
+    background: #eaf8f4;
+    border-color: #b4e4d7;
+  }
+
+  .step-row.is-host .pair-chip {
+    color: #0e6b58;
+    background: #eaf8f4;
+    border-color: #b4e4d7;
   }
 
   .active-pill {
@@ -1356,45 +1468,69 @@ const PROTOCOLS = {
     tag: "ACP",
     name: "Agent Client Protocol",
     transport: "JSON-RPC 2.0 over stdio · 换行分隔",
-    mentalModel: "<strong>像 IDE 管理一个本地副驾驶</strong>：客户端直接拉起本地 Agent 子进程，双方保持长连接。客户端能实时看见它在调哪个工具、能弹窗审批权限，整轮对话是完全透明的「白盒过程」。",
+    mentalModel: "<strong>像 IDE 管理一个本地副驾驶</strong>：客户端直接拉起本地 Agent 子进程，保持双向长连接。宿主可实时切换模型 / 推理 Effort / 模式，看见计划与工具轨迹，弹窗审批权限，甚至接管文件读写与终端执行——全过程透明「白盒」。",
     facts: [
       { label: "通信双方", val: "宿主（IDE / App）↔ 本地子进程" },
-      { label: "过程可见性", val: "白盒（工具调用、审批全可见）" },
-      { label: "会话与发现", val: "无发现步骤，先握手再建 sessionId" },
-      { label: "人工确认", val: "专用反向请求 request_permission" }
+      { label: "过程可见性", val: "白盒（计划、工具、审批、Diff 全可见）" },
+      { label: "模型与 Effort", val: "configOptions + set_config_option 联动切换" },
+      { label: "宿主反向委托", val: "审批、文件读写 fs/*、终端 terminal/*" }
     ],
     actors: [
       { name: "Host / Client", role: "IDE / 手机宿主" },
       { name: "Agent", role: "本地子进程" }
     ],
-    footnote: "<strong>核心特征：客户端必须看懂过程。</strong>tool_call、plan、审批卡片都是协议一等公民，而不是私有扩展。",
+    footnote: "<strong>核心特征：客户端必须看懂过程并参与控制。</strong>plan、tool_call、审批卡片、模型/Effort 选择、取消与历史重放都是协议一等公民，而非私有扩展。",
     sections: [
       {
         no: "01",
         title: "握手与认证",
-        desc: "先交换协议版本、双方能力和登录方式；此时还没有会话。",
+        desc: "先交换协议版本、双方能力（含宿主能否读写文件、开终端）和登录方式；此时还没有会话。",
         steps: [
           {
             uid: "acp-1", pair: "R1", dir: "right", method: "initialize", kind: "请求", kindType: "req",
-            short: "客户端报版本号、自身能力（能否读写文件、开终端）和身份信息。",
-            why: "建立连接后的第一条消息。客户端告诉 Agent 自己支持哪些宿主能力，以及自己是谁（例如 Zed 0.165）。",
+            short: "客户端报版本号、宿主能力（fs 读写与 terminal 终端开关）及身份信息。",
+            why: "建立连接后的第一条消息。只有当 clientCapabilities 明确声明支持 fs / terminal 时，Agent 后续才允许反向调用宿主文件系统或终端。",
             fields: [
               { k: "protocolVersion", d: "协商协议主版本号，这里为 1" },
+              { k: "clientCapabilities", d: "声明宿主支持文本文件读写与终端托管" },
               { k: "clientInfo", d: "客户端名称与版本，便于 Agent 做兼容处理" }
             ],
-            highlightKeys: ["protocolVersion", "clientInfo"],
-            json: { jsonrpc: "2.0", id: 0, method: "initialize", params: { protocolVersion: 1, clientInfo: { name: "Zed", version: "0.165" } } }
+            highlightKeys: ["protocolVersion", "clientCapabilities", "fs", "terminal"],
+            json: {
+              jsonrpc: "2.0",
+              id: 0,
+              method: "initialize",
+              params: {
+                protocolVersion: 1,
+                clientCapabilities: {
+                  fs: { readTextFile: true, writeTextFile: true },
+                  terminal: true
+                },
+                clientInfo: { name: "Zed", version: "0.165" }
+              }
+            }
           },
           {
             uid: "acp-2", pair: "R1", res: true, dir: "left", method: "result", kind: "响应", kindType: "res",
-            short: "Agent 回报自己支持的能力（如加载历史会话、识图）以及可用的登录方式。",
-            why: "Agent 告知客户端自身能力清单，并给出认证方式列表（如 cursor_login），下一步 authenticate 按此执行。",
+            short: "Agent 回报自己支持的能力（如 session/load 恢复历史、识图）及可用登录方式。",
+            why: "Agent 告知客户端自身能力清单。loadSession: true 意味着客户端后续可以用 session/load 恢复旧会话并重放历史。",
             fields: [
               { k: "agentCapabilities", d: "声明支持恢复会话、图片与内嵌上下文" },
-              { k: "authMethods", d: "可选认证方案列表，供下一步挑选" }
+              { k: "authMethods", d: "可选认证方案列表，供下一步 authenticate 挑选" }
             ],
-            highlightKeys: ["agentCapabilities", "authMethods"],
-            json: { jsonrpc: "2.0", id: 0, result: { protocolVersion: 1, agentCapabilities: { loadSession: true, promptCapabilities: { image: true, embeddedContext: true } }, authMethods: [{ id: "cursor_login", name: "Cursor Login" }] } }
+            highlightKeys: ["loadSession", "agentCapabilities", "authMethods"],
+            json: {
+              jsonrpc: "2.0",
+              id: 0,
+              result: {
+                protocolVersion: 1,
+                agentCapabilities: {
+                  loadSession: true,
+                  promptCapabilities: { image: true, embeddedContext: true }
+                },
+                authMethods: [{ id: "cursor_login", name: "Cursor Login" }]
+              }
+            }
           },
           {
             uid: "acp-3", pair: "R2", dir: "right", method: "authenticate", kind: "请求", kindType: "req",
@@ -1410,15 +1546,15 @@ const PROTOCOLS = {
       },
       {
         no: "02",
-        title: "建立会话",
-        desc: "绑定工作目录与 MCP 服务器，换取后续所有请求共用的 sessionId。",
+        title: "建立会话与初始配置",
+        desc: "绑定工作目录与 MCP 服务器，拿回 sessionId 与可用的「模式 / 模型 / 推理 Effort」选择器清单。",
         steps: [
           {
             uid: "acp-4", pair: "R3", dir: "right", method: "session/new", kind: "请求", kindType: "req",
             short: "开启新会话，指定项目工作目录（cwd）和要挂载的 MCP 服务器。",
-            why: "ACP 是面向本地工作区的协议，必须在开会话时明确 Agent 的工作目录和工具环境。",
+            why: "ACP 是面向本地工作区的协议，必须在开会话时明确 Agent 的工作目录（根目录边界）和附加的 MCP 工具环境。",
             fields: [
-              { k: "cwd", d: "本次会话绑定的本地工作目录" },
+              { k: "cwd", d: "本次会话绑定的本地工作目录（绝对路径）" },
               { k: "mcpServers", d: "附带注入给 Agent 的 MCP 服务列表" }
             ],
             highlightKeys: ["cwd", "mcpServers"],
@@ -1426,86 +1562,669 @@ const PROTOCOLS = {
           },
           {
             uid: "acp-5", pair: "R3", res: true, dir: "left", method: "result", kind: "响应", kindType: "res",
-            short: "返回唯一 sessionId，后续发消息、取消、恢复会话全靠它定位。",
-            why: "响应非常轻量，只返回一个 sessionId（如 sess-7c1e）。之后同一进程里可以并行维护多个会话。",
+            short: "返回 sessionId，同时下发 configOptions（模式、模型、Reasoning Effort），宿主据此渲染下拉栏。",
+            why: "客户端无需硬编码模型或思考档位！Agent 通过标准 category（mode / model / thought_level）动态声明当前值与可选项，后续用 session/set_config_option 随时切换。",
             fields: [
-              { k: "sessionId", d: "会话唯一标识，后续每条消息必带" }
+              { k: "sessionId", d: "会话唯一标识，后续每条消息必带" },
+              { k: "configOptions", d: "会话配置选择器数组，按 Agent 推荐优先级排序" },
+              { k: "category", d: "语义分类：mode / model / thought_level / model_config" }
             ],
-            highlightKeys: ["sessionId"],
-            json: { jsonrpc: "2.0", id: 2, result: { sessionId: "sess-7c1e" } }
+            highlightKeys: ["sessionId", "configOptions", "category", "currentValue"],
+            json: {
+              jsonrpc: "2.0",
+              id: 2,
+              result: {
+                sessionId: "sess-7c1e",
+                configOptions: [
+                  {
+                    id: "mode",
+                    name: "Session Mode",
+                    category: "mode",
+                    type: "select",
+                    currentValue: "code",
+                    options: [
+                      { value: "ask", name: "Ask" },
+                      { value: "code", name: "Code" }
+                    ]
+                  },
+                  {
+                    id: "model",
+                    name: "Model",
+                    category: "model",
+                    type: "select",
+                    currentValue: "claude-sonnet-4",
+                    options: [
+                      { value: "claude-sonnet-4", name: "Claude Sonnet 4" },
+                      { value: "claude-opus-4", name: "Claude Opus 4" }
+                    ]
+                  },
+                  {
+                    id: "thought_level",
+                    name: "Reasoning Effort",
+                    category: "thought_level",
+                    type: "select",
+                    currentValue: "medium",
+                    options: [
+                      { value: "low", name: "Low" },
+                      { value: "medium", name: "Medium" },
+                      { value: "high", name: "High" }
+                    ]
+                  }
+                ]
+              }
+            }
           }
         ]
       },
       {
         no: "03",
         title: "一轮对话（R4 挂起整轮）",
-        desc: "session/prompt 发出后不会立刻返回，而是挂起整轮；过程、审批、正文全靠中间通知和反向请求完成，最后才返回停止原因。",
+        desc: "session/prompt 挂起整轮；期间依次演示计划、工具宣告、审批、工具完成、反向写文件、流式正文，最后返回停止原因。",
         steps: [
           {
-            uid: "acp-6", pair: "R4", dir: "right", method: "session/prompt", kind: "请求（挂起开始）", kindType: "req", pending: "start",
+            uid: "acp-6", pair: "R4", dir: "right", method: "session/prompt", kind: "请求（挂起开始）", kindType: "req", pending: "start", pendingLabel: "R4 挂起中",
             short: "提交本轮任务；该请求将一直挂起，直到整轮对话结束才返回最终 result。",
-            why: "注意：这一步的响应里不包含正文！正文和进度会在挂起期间通过 session/update 通知实时推回。",
+            why: "注意：这一步的响应里不包含正文！计划、工具进度、审批、文件写入与正文都会在挂起期间通过通知和反向请求完成。",
             fields: [
               { k: "sessionId", d: "指定发往哪个会话" },
-              { k: "prompt", d: "本轮用户输入的内容块数组" }
+              { k: "prompt", d: "本轮用户输入的内容块数组（支持文本、图片、内嵌文件）" }
             ],
             highlightKeys: ["sessionId", "prompt"],
             json: { jsonrpc: "2.0", id: 3, method: "session/prompt", params: { sessionId: "sess-7c1e", prompt: [{ type: "text", text: TASK_TEXT }] } }
           },
           {
-            uid: "acp-7", dir: "left", method: "session/update", kind: "通知", kindType: "notify", pending: "mid",
-            short: "通知宿主「我准备调工具查天气了」，客户端据此实时渲染进度条或工具卡片。",
-            why: "单向通知（无 JSON-RPC id，不需回复）。Agent 把工具标题、类型和涉及路径透明汇报给宿主，让用户看得见过程。",
+            uid: "acp-7", dir: "left", method: "session/update", kind: "计划通知", kindType: "notify", pending: "mid",
+            short: "动手前先推结构化执行计划（plan），IDE 侧边栏直接渲染出实时待办清单。",
+            why: "单向通知（无 id）。每次更新需发完整 entries 列表，宿主整表替换渲染；每项含 priority（high/medium/low）与 status（pending/in_progress/completed）。",
             fields: [
-              { k: "sessionUpdate", d: "更新类型为 tool_call（工具调用状态）" },
-              { k: "status", d: "in_progress 表示正在准备/执行中" }
+              { k: "sessionUpdate", d: "plan 表示结构化执行清单" },
+              { k: "entries", d: "完整待办项数组，供宿主绘制进度 checklist" }
             ],
-            highlightKeys: ["sessionUpdate", "toolCallId", "status"],
-            json: { jsonrpc: "2.0", method: "session/update", params: { sessionId: "sess-7c1e", update: { sessionUpdate: "tool_call", toolCallId: "call_1", title: "Fetch weather", kind: "fetch", status: "in_progress", locations: [{ path: "/home/me/proj" }] } } }
+            highlightKeys: ["sessionUpdate", "entries", "status"],
+            json: {
+              jsonrpc: "2.0",
+              method: "session/update",
+              params: {
+                sessionId: "sess-7c1e",
+                update: {
+                  sessionUpdate: "plan",
+                  entries: [
+                    { content: "查询今日天气数据", priority: "high", status: "in_progress" },
+                    { content: "将一句话报告写入 weather.md 并回复", priority: "medium", status: "pending" }
+                  ]
+                }
+              }
+            }
           },
           {
-            uid: "acp-8", pair: "Q1", dir: "left", method: "session/request_permission", kind: "反向请求", kindType: "human", human: true, pending: "mid",
+            uid: "acp-8", dir: "left", method: "session/update", kind: "工具宣告", kindType: "notify", pending: "mid",
+            short: "通知宿主「准备调用 fetch_weather 查天气」，状态为 pending 等待审批。",
+            why: "Agent 把工具名、标题、分类（kind: fetch）和关联路径透明报给宿主，客户端据此渲染带图标的工具卡片。",
+            fields: [
+              { k: "sessionUpdate", d: "tool_call 宣告一次新的工具调用" },
+              { k: "toolCallId", d: "本次工具调用的唯一 ID，后续审批与更新全靠它关联" },
+              { k: "status", d: "pending 表示参数就绪或等待授权，尚未真正执行" }
+            ],
+            highlightKeys: ["sessionUpdate", "toolCallId", "kind", "status"],
+            json: {
+              jsonrpc: "2.0",
+              method: "session/update",
+              params: {
+                sessionId: "sess-7c1e",
+                update: {
+                  sessionUpdate: "tool_call",
+                  toolCallId: "call_1",
+                  name: "fetch_weather",
+                  title: "Fetch weather",
+                  kind: "fetch",
+                  status: "pending",
+                  locations: [{ path: "/home/me/proj" }]
+                }
+              }
+            }
+          },
+          {
+            uid: "acp-9", pair: "Q1", dir: "left", method: "session/request_permission", kind: "反向请求", kindType: "human", human: true, pending: "mid",
             short: "Agent 反过来向客户端请求授权：这次允许、始终允许，还是拒绝执行？",
-            why: "ACP 的标志性能力：由于是双向 JSON-RPC，Agent 可以主动发起带 id 的请求暂停执行，等客户端弹窗让用户拍板。",
+            why: "ACP 的标志性能力：双向 JSON-RPC 允许 Agent 主动发带 id 的请求暂停执行，等客户端弹窗让用户拍板。",
             fields: [
-              { k: "toolCall", d: "待审批的工具调用摘要，用于渲染审批卡片" },
-              { k: "options[].kind", d: "标准动作枚举：allow_once / allow_always / reject_once" }
+              { k: "toolCall", d: "引用待审批的 toolCallId 及展示摘要" },
+              { k: "options[].kind", d: "标准动作枚举：allow_once / allow_always / reject_once / reject_always" }
             ],
-            highlightKeys: ["method", "options"],
-            json: { jsonrpc: "2.0", id: 9, method: "session/request_permission", params: { sessionId: "sess-7c1e", toolCall: { toolCallId: "call_1", title: "Fetch weather", kind: "fetch" }, options: [{ optionId: "allow-once", name: "Allow once", kind: "allow_once" }, { optionId: "allow-always", name: "Always allow", kind: "allow_always" }, { optionId: "reject-once", name: "Reject", kind: "reject_once" }] } }
+            highlightKeys: ["method", "toolCall", "options"],
+            json: {
+              jsonrpc: "2.0",
+              id: 9,
+              method: "session/request_permission",
+              params: {
+                sessionId: "sess-7c1e",
+                toolCall: { toolCallId: "call_1", title: "Fetch weather", kind: "fetch" },
+                options: [
+                  { optionId: "allow-once", name: "Allow once", kind: "allow_once" },
+                  { optionId: "allow-always", name: "Always allow", kind: "allow_always" },
+                  { optionId: "reject-once", name: "Reject", kind: "reject_once" }
+                ]
+              }
+            }
           },
           {
-            uid: "acp-9", pair: "Q1", res: true, dir: "right", method: "result", kind: "授权响应", kindType: "human", human: true, pending: "mid",
+            uid: "acp-10", pair: "Q1", res: true, dir: "right", method: "result", kind: "授权响应", kindType: "human", human: true, pending: "mid",
             short: "客户端把用户点击的选项（allow-once）回传给 Agent，工具随即放行执行。",
-            why: "与 Q1（id: 9）配对的响应。Agent 收到明确答复后才真正调用工具；若用户选拒绝，则跳过该工具。",
+            why: "与 Q1（id: 9）配对的响应。Agent 收到明确答复后才真正执行；若本轮此时被取消，客户端必须回 outcome: \"cancelled\"。",
             fields: [
-              { k: "outcome", d: "selected 表示用户已做出选择" },
+              { k: "outcome", d: "selected 表示用户已做出选择（或 cancelled）" },
               { k: "optionId", d: "选中的选项 ID：allow-once" }
             ],
             highlightKeys: ["outcome", "optionId"],
             json: { jsonrpc: "2.0", id: 9, result: { outcome: { outcome: "selected", optionId: "allow-once" } } }
           },
           {
-            uid: "acp-10", dir: "left", method: "session/update", kind: "流式通知", kindType: "notify", pending: "mid",
+            uid: "acp-11", dir: "left", method: "session/update", kind: "工具完成", kindType: "notify", pending: "mid",
+            short: "工具执行完毕，通过 tool_call_update 将状态更新为 completed 并回传结果内容。",
+            why: "与前面的 tool_call 形成状态闭环（pending → in_progress → completed / failed）。content 支持普通文本、代码 diff 或内嵌终端。",
+            fields: [
+              { k: "sessionUpdate", d: "tool_call_update 增量更新指定工具卡片" },
+              { k: "status", d: "completed 表示成功结束" },
+              { k: "content", d: "工具产出内容，可供宿主折叠展示" }
+            ],
+            highlightKeys: ["sessionUpdate", "toolCallId", "status", "content"],
+            json: {
+              jsonrpc: "2.0",
+              method: "session/update",
+              params: {
+                sessionId: "sess-7c1e",
+                update: {
+                  sessionUpdate: "tool_call_update",
+                  toolCallId: "call_1",
+                  status: "completed",
+                  content: [{ type: "content", content: { type: "text", text: "晴，最高 24°C，微风" } }]
+                }
+              }
+            }
+          },
+          {
+            uid: "acp-12", pair: "F1", dir: "left", method: "fs/write_text_file", kind: "宿主文件写", kindType: "req", host: true, pending: "mid",
+            short: "Agent 反向请求宿主把报告写入 weather.md，由 IDE 负责落盘、追踪修改与展示 Diff。",
+            why: "ACP v1 的经典双向委托：与其让 Agent 绕过编辑器直接改磁盘，不如调宿主 fs/read_text_file / fs/write_text_file（还能读到未保存的 buffer）。注：ACP v2 草案因沙箱化趋势正逐步移除标准 fs/terminal 表面。",
+            fields: [
+              { k: "path", d: "必须为绝对路径，宿主会校验是否落在工作区根目录内" },
+              { k: "content", d: "要写入的完整文本内容（文件不存在则创建）" }
+            ],
+            highlightKeys: ["method", "path", "content"],
+            json: {
+              jsonrpc: "2.0",
+              id: 10,
+              method: "fs/write_text_file",
+              params: {
+                sessionId: "sess-7c1e",
+                path: "/home/me/proj/weather.md",
+                content: "# 今日天气\n今天晴，最高 24°C，微风。\n"
+              }
+            }
+          },
+          {
+            uid: "acp-13", pair: "F1", res: true, dir: "right", method: "result", kind: "写入响应", kindType: "res", host: true, pending: "mid",
+            short: "宿主确认文件已写入并返回空对象 {}，Agent 继续组织最终回复。",
+            why: "与 F1（id: 10）配对。宿主若拒绝越界路径或敏感配置文件（如 git hook），则在此返回 JSON-RPC error。",
+            fields: [
+              { k: "result", d: "空对象 {} 代表写入成功" }
+            ],
+            highlightKeys: ["id", "result"],
+            json: { jsonrpc: "2.0", id: 10, result: {} }
+          },
+          {
+            uid: "acp-14", dir: "left", method: "session/update", kind: "流式通知", kindType: "notify", pending: "mid",
             short: "把最终回答的正文按增量片段（chunk）推给客户端，拼起来即完整回复。",
-            why: "同样走 session/update 通知，但类型换成了 agent_message_chunk；实际传输中可能会按字词分多次推送。",
+            why: "同样走 session/update 通知，类型换成 agent_message_chunk；实际传输中会按 token 分多次流式推送。",
             fields: [
               { k: "sessionUpdate", d: "agent_message_chunk 表示回答正文增量" },
               { k: "content.text", d: "本段生成的文字内容" }
             ],
             highlightKeys: ["sessionUpdate", "text"],
-            json: { jsonrpc: "2.0", method: "session/update", params: { sessionId: "sess-7c1e", update: { sessionUpdate: "agent_message_chunk", content: { type: "text", text: "今天晴，最高 24°C。" } } } }
+            json: {
+              jsonrpc: "2.0",
+              method: "session/update",
+              params: {
+                sessionId: "sess-7c1e",
+                update: {
+                  sessionUpdate: "agent_message_chunk",
+                  content: { type: "text", text: "今天晴，最高 24°C，已同步写入 weather.md。" }
+                }
+              }
+            }
           },
           {
-            uid: "acp-11", pair: "R4", res: true, dir: "left", method: "result", kind: "响应（挂起结束）", kindType: "res", pending: "end",
+            uid: "acp-15", pair: "R4", res: true, dir: "left", method: "result", kind: "响应（挂起结束）", kindType: "res", pending: "end",
             short: "对应第 6 步的 R4（id: 3），宣告本轮彻底结束并给出停止原因。",
             why: "正文已经在前面的通知里推完了，所以最终响应里只有 stopReason（正常结束 / 被取消 / 触及长度上限 / 拒绝）。",
             fields: [
               { k: "id: 3", d: "与第 6 步 session/prompt 配对闭合" },
-              { k: "stopReason", d: "end_turn / cancelled / max_tokens / refusal" }
+              { k: "stopReason", d: "end_turn / cancelled / max_tokens / max_turn_requests / refusal" }
             ],
             highlightKeys: ["id", "stopReason"],
             json: { jsonrpc: "2.0", id: 3, result: { stopReason: "end_turn" } }
+          }
+        ]
+      }
+    ],
+    scenarios: [
+      {
+        key: "config",
+        shortTitle: "模型 / Effort / 模式",
+        title: "切换模型、推理 Effort 与会话模式",
+        brief: "<strong>亮点：联动刷新机制。</strong>ACP 用统一的 <code>configOptions</code>（分类含 <code>model</code> / <code>thought_level</code> / <code>mode</code> / <code>model_config</code>）替代了早期单独的 modes API。每次调用 <code>session/set_config_option</code>，Agent 必须返回<strong>全量</strong>最新配置，因为切换模型可能会改变可用的 Reasoning Effort 档位。",
+        steps: [
+          {
+            uid: "acp-cfg-1", pair: "C1", dir: "right", method: "session/set_config_option", kind: "切换模型", kindType: "req",
+            short: "用户在 IDE 下拉框把模型从 claude-sonnet-4 切换为 claude-opus-4。",
+            why: "可以在空闲时或生成过程中随时调用。configId 对应 session/new 下发的 configOptions[].id。",
+            fields: [
+              { k: "configId", d: "要修改的配置项 ID，这里是 model" },
+              { k: "value", d: "目标选项的 value：claude-opus-4" }
+            ],
+            highlightKeys: ["method", "configId", "value"],
+            json: {
+              jsonrpc: "2.0",
+              id: 20,
+              method: "session/set_config_option",
+              params: { sessionId: "sess-7c1e", configId: "model", value: "claude-opus-4" }
+            }
+          },
+          {
+            uid: "acp-cfg-2", pair: "C1", res: true, dir: "left", method: "result", kind: "全量刷新", kindType: "res",
+            short: "返回更新后的完整 configOptions：切到 Opus 后，thought_level 自动多出 max 档！",
+            why: "规范强制要求响应返回「完整」configOptions 而非仅回 OK，正是为了处理配置间依赖（例如不同模型支持的 Reasoning Effort / 上下文窗口不同）。",
+            fields: [
+              { k: "model.currentValue", d: "已生效为 claude-opus-4" },
+              { k: "thought_level.options", d: "联动新增了 max（最高推理深度）选项" }
+            ],
+            highlightKeys: ["currentValue", "thought_level", "max"],
+            json: {
+              jsonrpc: "2.0",
+              id: 20,
+              result: {
+                configOptions: [
+                  {
+                    id: "mode",
+                    name: "Session Mode",
+                    category: "mode",
+                    type: "select",
+                    currentValue: "code",
+                    options: [{ value: "ask", name: "Ask" }, { value: "code", name: "Code" }]
+                  },
+                  {
+                    id: "model",
+                    name: "Model",
+                    category: "model",
+                    type: "select",
+                    currentValue: "claude-opus-4",
+                    options: [
+                      { value: "claude-sonnet-4", name: "Claude Sonnet 4" },
+                      { value: "claude-opus-4", name: "Claude Opus 4" }
+                    ]
+                  },
+                  {
+                    id: "thought_level",
+                    name: "Reasoning Effort",
+                    category: "thought_level",
+                    type: "select",
+                    currentValue: "medium",
+                    options: [
+                      { value: "low", name: "Low" },
+                      { value: "medium", name: "Medium" },
+                      { value: "high", name: "High" },
+                      { value: "max", name: "Max" }
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            uid: "acp-cfg-3", pair: "C2", dir: "right", method: "session/set_config_option", kind: "调高 Effort", kindType: "req",
+            short: "用户接着把推理强度（thought_level）调到 high，准备处理复杂重构。",
+            why: "同一套 RPC 覆盖模型、Effort（thought_level）、模式（mode）和上下文长度（model_config）；布尔开关（如自动放行）还可带 type: \"boolean\"。",
+            fields: [
+              { k: "configId", d: "thought_level 对应推理深度 / effort 选择器" },
+              { k: "value", d: "切换为 high（需在 options 列表中）" }
+            ],
+            highlightKeys: ["configId", "value"],
+            json: {
+              jsonrpc: "2.0",
+              id: 21,
+              method: "session/set_config_option",
+              params: { sessionId: "sess-7c1e", configId: "thought_level", value: "high" }
+            }
+          },
+          {
+            uid: "acp-cfg-4", pair: "C2", res: true, dir: "left", method: "result", kind: "配置确认", kindType: "res",
+            short: "返回最新全量配置，确认 thought_level 已切为 high。",
+            why: "客户端直接用返回的 configOptions 刷新界面状态，保证 UI 与 Agent 内部状态永远单一真相源。",
+            fields: [
+              { k: "thought_level.currentValue", d: "已更新为 high" }
+            ],
+            highlightKeys: ["thought_level", "currentValue"],
+            json: {
+              jsonrpc: "2.0",
+              id: 21,
+              result: {
+                configOptions: [
+                  { id: "mode", name: "Session Mode", category: "mode", type: "select", currentValue: "code", options: [{ value: "ask", name: "Ask" }, { value: "code", name: "Code" }] },
+                  { id: "model", name: "Model", category: "model", type: "select", currentValue: "claude-opus-4", options: [{ value: "claude-sonnet-4", name: "Claude Sonnet 4" }, { value: "claude-opus-4", name: "Claude Opus 4" }] },
+                  { id: "thought_level", name: "Reasoning Effort", category: "thought_level", type: "select", currentValue: "high", options: [{ value: "low", name: "Low" }, { value: "medium", name: "Medium" }, { value: "high", name: "High" }, { value: "max", name: "Max" }] }
+                ]
+              }
+            }
+          },
+          {
+            uid: "acp-cfg-5", dir: "left", method: "session/update", kind: "反向配置同步", kindType: "notify",
+            short: "Agent 也能主动变更配置（例如切换会话模式为 ask）并通过 config_option_update 通知宿主。",
+            why: "例如用户在对话里说「切到只读模式」或 Agent 执行了 switch_mode 工具，Agent 主动推送全量 configOptions 让宿主下拉框同步变化（取代了旧版 current_mode_update）。",
+            fields: [
+              { k: "sessionUpdate", d: "config_option_update 表示 Agent 侧主动改了配置" },
+              { k: "mode.currentValue", d: "自动切换为 ask（只读询问模式）" }
+            ],
+            highlightKeys: ["sessionUpdate", "configOptions", "currentValue"],
+            json: {
+              jsonrpc: "2.0",
+              method: "session/update",
+              params: {
+                sessionId: "sess-7c1e",
+                update: {
+                  sessionUpdate: "config_option_update",
+                  configOptions: [
+                    { id: "mode", name: "Session Mode", category: "mode", type: "select", currentValue: "ask", options: [{ value: "ask", name: "Ask" }, { value: "code", name: "Code" }] },
+                    { id: "model", name: "Model", category: "model", type: "select", currentValue: "claude-opus-4", options: [{ value: "claude-sonnet-4", name: "Claude Sonnet 4" }, { value: "claude-opus-4", name: "Claude Opus 4" }] },
+                    { id: "thought_level", name: "Reasoning Effort", category: "thought_level", type: "select", currentValue: "high", options: [{ value: "low", name: "Low" }, { value: "medium", name: "Medium" }, { value: "high", name: "High" }, { value: "max", name: "Max" }] }
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        key: "cancel",
+        shortTitle: "中途取消",
+        title: "用户点停止：中途打断（session/cancel）",
+        brief: "<strong>亮点：单向通知打断 + 正常收尾。</strong>用户按停止按钮时，客户端发送无 <code>id</code> 的 <code>session/cancel</code> 通知；Agent 须立即中止模型与工具，并以 <code>stopReason: \"cancelled\"</code> 闭合前面挂起的 <code>session/prompt</code>（不是抛错误）。",
+        steps: [
+          {
+            uid: "acp-can-1", pair: "R5", dir: "right", method: "session/prompt", kind: "请求（挂起开始）", kindType: "req", pending: "start", pendingLabel: "R5 挂起中",
+            short: "发起一轮较耗时的深度分析任务，R5 开始挂起。",
+            why: "与主线一样，session/prompt 在本轮结束前一直保持 pending 状态。",
+            fields: [
+              { k: "id: 30", d: "本次挂起请求的 JSON-RPC ID" },
+              { k: "prompt", d: "触发深度分析的用户消息" }
+            ],
+            highlightKeys: ["id", "method", "prompt"],
+            json: { jsonrpc: "2.0", id: 30, method: "session/prompt", params: { sessionId: "sess-7c1e", prompt: [{ type: "text", text: "对比近 30 天天气并生成趋势图表脚本" }] } }
+          },
+          {
+            uid: "acp-can-2", dir: "left", method: "session/update", kind: "思考流通知", kindType: "notify", pending: "mid",
+            short: "Agent 正在深度思考，通过 agent_thought_chunk 流式推回推理片段（IDE 可折叠展示）。",
+            why: "ACP 将思考过程（agent_thought_chunk）与正式回答（agent_message_chunk）明确区分，前端可做折叠思考框。",
+            fields: [
+              { k: "sessionUpdate", d: "agent_thought_chunk 表示内部推理过程流" },
+              { k: "content.text", d: "实时推理文字片段" }
+            ],
+            highlightKeys: ["sessionUpdate", "text"],
+            json: {
+              jsonrpc: "2.0",
+              method: "session/update",
+              params: {
+                sessionId: "sess-7c1e",
+                update: {
+                  sessionUpdate: "agent_thought_chunk",
+                  content: { type: "text", text: "先拆解 30 天历史数据来源，准备拉取气象站归档…" }
+                }
+              }
+            }
+          },
+          {
+            uid: "acp-can-3", dir: "right", method: "session/cancel", kind: "打断通知", kindType: "notify", human: true, pending: "mid",
+            short: "用户点击「停止」按钮，客户端立即发出 session/cancel 单向通知（无 id，不需回复）。",
+            why: "如果此时有未决的 session/request_permission，客户端也应回复 outcome: \"cancelled\"，避免 Agent 死等。",
+            fields: [
+              { k: "method", d: "session/cancel 是单向通知（注意没有 id 字段）" },
+              { k: "sessionId", d: "指定要取消哪一个会话的当前前台任务" }
+            ],
+            highlightKeys: ["method", "sessionId"],
+            json: { jsonrpc: "2.0", method: "session/cancel", params: { sessionId: "sess-7c1e" } }
+          },
+          {
+            uid: "acp-can-4", pair: "R5", res: true, dir: "left", method: "result", kind: "响应（已取消）", kindType: "res", pending: "end",
+            short: "Agent 中止模型和工具调用，发完残留更新后返回 stopReason: \"cancelled\" 闭合 R5。",
+            why: "协议明确要求捕获中止异常并走正常 result 返回 cancelled，而不是抛 JSON-RPC error，方便客户端清理状态。",
+            fields: [
+              { k: "id: 30", d: "闭合挂起中的 R5 session/prompt" },
+              { k: "stopReason", d: "cancelled 表示被用户主动打断" }
+            ],
+            highlightKeys: ["id", "stopReason"],
+            json: { jsonrpc: "2.0", id: 30, result: { stopReason: "cancelled" } }
+          }
+        ]
+      },
+      {
+        key: "load",
+        shortTitle: "恢复历史会话",
+        title: "重启 IDE 后恢复对话并重放历史（session/load）",
+        brief: "<strong>亮点：以流式通知重放历史。</strong>当 <code>initialize</code> 声明 <code>loadSession: true</code> 时，宿主可用旧 <code>sessionId</code> 调用 <code>session/load</code>；Agent 会先像直播一样把历史消息通过 <code>session/update</code> 逐条推回，全部播完才闭合响应。（若只需无缝续接不想重放，规范另提供 <code>session/resume</code>。）",
+        steps: [
+          {
+            uid: "acp-load-1", pair: "L1", dir: "right", method: "session/load", kind: "加载请求", kindType: "req",
+            short: "客户端重启后传入之前的 sessionId、cwd 和 mcpServers，请求恢复历史会话。",
+            why: "跨进程、跨客户端实例共享或续接对话的核心入口；L1 会保持挂起，直到历史消息全部重放完毕。",
+            fields: [
+              { k: "sessionId", d: "待恢复的历史会话 ID（sess-7c1e）" },
+              { k: "cwd / mcpServers", d: "重新绑定工作目录与 MCP 服务" }
+            ],
+            highlightKeys: ["method", "sessionId", "cwd"],
+            json: {
+              jsonrpc: "2.0",
+              id: 40,
+              method: "session/load",
+              params: { sessionId: "sess-7c1e", cwd: "/home/me/proj", mcpServers: [] }
+            }
+          },
+          {
+            uid: "acp-load-2", dir: "left", method: "session/update", kind: "重放用户消息", kindType: "notify",
+            short: "Agent 通过 user_message_chunk 重放用户之前发过的提问。",
+            why: "复用与实时对话完全相同的 session/update 通道，客户端用一套渲染逻辑就能同时处理实时流和历史回放。",
+            fields: [
+              { k: "sessionUpdate", d: "user_message_chunk 表示历史中的用户消息" },
+              { k: "messageId", d: "重放消息的唯一标识" }
+            ],
+            highlightKeys: ["sessionUpdate", "messageId", "text"],
+            json: {
+              jsonrpc: "2.0",
+              method: "session/update",
+              params: {
+                sessionId: "sess-7c1e",
+                update: {
+                  sessionUpdate: "user_message_chunk",
+                  messageId: "msg_u_01",
+                  content: { type: "text", text: TASK_TEXT }
+                }
+              }
+            }
+          },
+          {
+            uid: "acp-load-3", dir: "left", method: "session/update", kind: "重放助手回复", kindType: "notify",
+            short: "紧接着重放历史工具调用与助手回答（agent_message_chunk）。",
+            why: "历史中的 tool_call、plan、agent_message_chunk 会按原顺序流式推回，但纯实时提示（notice）不会重放。",
+            fields: [
+              { k: "sessionUpdate", d: "agent_message_chunk 重放助手曾经的回答" }
+            ],
+            highlightKeys: ["sessionUpdate", "text"],
+            json: {
+              jsonrpc: "2.0",
+              method: "session/update",
+              params: {
+                sessionId: "sess-7c1e",
+                update: {
+                  sessionUpdate: "agent_message_chunk",
+                  messageId: "msg_a_01",
+                  content: { type: "text", text: "今天晴，最高 24°C，已同步写入 weather.md。" }
+                }
+              }
+            }
+          },
+          {
+            uid: "acp-load-4", pair: "L1", res: true, dir: "left", method: "result", kind: "加载完成", kindType: "res",
+            short: "所有历史条目推送完毕后闭合 L1，会话恢复就绪，可继续发 session/prompt。",
+            why: "响应里也可附带最新的 configOptions，让宿主恢复当时的模型与模式状态。",
+            fields: [
+              { k: "id: 40", d: "与第 1 步 session/load 配对，标志历史重放结束" }
+            ],
+            highlightKeys: ["id", "result"],
+            json: { jsonrpc: "2.0", id: 40, result: {} }
+          }
+        ]
+      },
+      {
+        key: "terminal",
+        shortTitle: "宿主终端委托",
+        title: "反向委托宿主运行终端命令（terminal/*）",
+        brief: "<strong>亮点：把命令执行托管给 IDE 终端。</strong>当客户端在 <code>initialize</code> 声明 <code>terminal: true</code> 时，Agent 可反向发起 <code>terminal/create</code>，并将 <code>terminalId</code> 内嵌到工具卡片里直播输出，最后等待退出、拉取输出并释放句柄。（ACP v1 特性，v2 草案转向 Agent 自管沙箱终端。）",
+        steps: [
+          {
+            uid: "acp-term-1", pair: "T1", dir: "left", method: "terminal/create", kind: "创建终端", kindType: "req", host: true,
+            short: "Agent 反向请求宿主启动命令（如 pytest -q），设置 cwd、环境变量与输出字节上限。",
+            why: "宿主实际负责起子进程并把关安全策略（校验 cwd、环境变量与命令权限），Agent 不直接绕开宿主执行。",
+            fields: [
+              { k: "command / args", d: "要执行的命令及参数数组" },
+              { k: "outputByteLimit", d: "最多保留多少字节输出，超限从头部按字符边界截断" }
+            ],
+            highlightKeys: ["method", "command", "args", "outputByteLimit"],
+            json: {
+              jsonrpc: "2.0",
+              id: 50,
+              method: "terminal/create",
+              params: {
+                sessionId: "sess-7c1e",
+                command: "pytest",
+                args: ["-q"],
+                cwd: "/home/me/proj",
+                outputByteLimit: 1048576
+              }
+            }
+          },
+          {
+            uid: "acp-term-2", pair: "T1", res: true, dir: "right", method: "result", kind: "返回句柄", kindType: "res", host: true,
+            short: "宿主立即返回 terminalId（不阻塞等命令跑完），命令在后台继续运行。",
+            why: "异步句柄设计让 Agent 在命令执行期间仍可并发做事，或者先把它挂到 UI 卡片里给用户看实时输出。",
+            fields: [
+              { k: "terminalId", d: "终端唯一句柄（term_01），供后续内嵌、等待、拉输出与释放" }
+            ],
+            highlightKeys: ["terminalId"],
+            json: { jsonrpc: "2.0", id: 50, result: { terminalId: "term_01" } }
+          },
+          {
+            uid: "acp-term-3", dir: "left", method: "session/update", kind: "内嵌终端", kindType: "notify",
+            short: "把 terminalId 嵌入 tool_call，IDE 直接在工具卡片内实时渲染终端输出流。",
+            why: "即便后续 Agent 释放了 terminal 句柄，客户端仍会保留这段内嵌终端输出供用户回看。",
+            fields: [
+              { k: "content[].type", d: "terminal 表示把实时终端视图嵌入当前工具卡片" },
+              { k: "terminalId", d: "关联上一步创建的 term_01" }
+            ],
+            highlightKeys: ["sessionUpdate", "type", "terminalId"],
+            json: {
+              jsonrpc: "2.0",
+              method: "session/update",
+              params: {
+                sessionId: "sess-7c1e",
+                update: {
+                  sessionUpdate: "tool_call",
+                  toolCallId: "call_test_1",
+                  title: "Run pytest",
+                  kind: "execute",
+                  status: "in_progress",
+                  content: [{ type: "terminal", terminalId: "term_01" }]
+                }
+              }
+            }
+          },
+          {
+            uid: "acp-term-4", pair: "T2", dir: "left", method: "terminal/wait_for_exit", kind: "等待退出", kindType: "req", host: true,
+            short: "等待命令退出（超时时 Agent 可先发 terminal/kill 杀进程），随后收到 exitCode。",
+            why: "客户端会在进程结束后返回 { exitCode: 0, signal: null }，此处略去空/简单响应帧，紧接着拉取输出。",
+            fields: [
+              { k: "terminalId", d: "阻塞等待 term_01 进程退出" }
+            ],
+            highlightKeys: ["method", "terminalId"],
+            json: { jsonrpc: "2.0", id: 51, method: "terminal/wait_for_exit", params: { sessionId: "sess-7c1e", terminalId: "term_01" } }
+          },
+          {
+            uid: "acp-term-5", pair: "T3", dir: "left", method: "terminal/output", kind: "拉取输出", kindType: "req", host: true,
+            short: "按需读取捕获到的标准输出与退出码，作为工具结果喂回大模型。",
+            why: "也可在命令运行中途轮询调用；响应包含 output、truncated（是否被字节上限截断）及 exitStatus。",
+            fields: [
+              { k: "terminalId", d: "读取 term_01 当前缓冲的全部输出" }
+            ],
+            highlightKeys: ["method", "terminalId"],
+            json: { jsonrpc: "2.0", id: 52, method: "terminal/output", params: { sessionId: "sess-7c1e", terminalId: "term_01" } }
+          },
+          {
+            uid: "acp-term-6", pair: "T4", dir: "left", method: "terminal/release", kind: "释放终端", kindType: "req", host: true,
+            short: "用完必须调用 terminal/release 释放终端资源（若仍在运行会顺带终止）。",
+            why: "规范要求 Agent 显式回收终端句柄，防止长会话泄漏系统 PTY/子进程资源。",
+            fields: [
+              { k: "terminalId", d: "释放后 term_01 立即失效，不可再查询" }
+            ],
+            highlightKeys: ["method", "terminalId"],
+            json: { jsonrpc: "2.0", id: 53, method: "terminal/release", params: { sessionId: "sess-7c1e", terminalId: "term_01" } }
+          }
+        ]
+      },
+      {
+        key: "commands",
+        shortTitle: "斜杠命令",
+        title: "动态广播与触发斜杠命令（/plan、/web）",
+        brief: "<strong>亮点：零专用执行 RPC。</strong>建会话后 Agent 用 <code>available_commands_update</code> 告知客户端支持哪些 <code>/</code> 命令及参数提示；用户输入时直接放进普通 <code>session/prompt</code> 文本即可。",
+        steps: [
+          {
+            uid: "acp-cmd-1", dir: "left", method: "session/update", kind: "命令广告", kindType: "notify",
+            short: "Agent 主动推送当前会话可用的斜杠命令清单，客户端据此弹出 / 自动补全菜单。",
+            why: "支持动态增删——当上下文或项目环境变化时，Agent 可随时再推一次 available_commands_update 刷新命令列表。",
+            fields: [
+              { k: "sessionUpdate", d: "available_commands_update 广播斜杠命令列表" },
+              { k: "availableCommands[].input.hint", d: "输入框里的参数占位提示语" }
+            ],
+            highlightKeys: ["sessionUpdate", "availableCommands", "hint"],
+            json: {
+              jsonrpc: "2.0",
+              method: "session/update",
+              params: {
+                sessionId: "sess-7c1e",
+                update: {
+                  sessionUpdate: "available_commands_update",
+                  availableCommands: [
+                    { name: "web", description: "联网搜索最新信息", input: { hint: "输入搜索关键词" } },
+                    { name: "test", description: "运行当前项目测试" },
+                    { name: "plan", description: "先输出详细实施计划", input: { hint: "描述要规划的任务" } }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            uid: "acp-cmd-2", pair: "R6", dir: "right", method: "session/prompt", kind: "普通提示触发", kindType: "req",
+            short: "用户输入 /plan 补充未来三天天气预报，仍直接走常规 session/prompt 发送。",
+            why: "不额外造「execute_command」接口，命令前缀由 Agent 在解析 prompt 文本时识别，还可混搭图片/文件资源块一起发送。",
+            fields: [
+              { k: "prompt[0].text", d: "以 /plan 开头的普通文本，Agent 识别前缀并执行对应工作流" }
+            ],
+            highlightKeys: ["method", "text"],
+            json: {
+              jsonrpc: "2.0",
+              id: 60,
+              method: "session/prompt",
+              params: {
+                sessionId: "sess-7c1e",
+                prompt: [{ type: "text", text: "/plan 给天气报告补充未来三天预报" }]
+              }
+            }
           }
         ]
       }
@@ -1517,18 +2236,18 @@ const PROTOCOLS = {
     tag: "A2A",
     name: "Agent2Agent",
     transport: "HTTP(S) · 支持 JSON-RPC / gRPC / REST 三种 binding",
-    mentalModel: "<strong>像给外部专业团队发工单外包任务</strong>：先读对方公开名片（AgentCard）确认会干什么，递交任务后立刻拿到 taskId 凭据，之后只收状态和成品，对方内部用了什么工具完全是「黑盒」。",
+    mentalModel: "<strong>像给外部专业团队发工单外包任务</strong>：先读对方公开名片（AgentCard）确认会干什么，递交任务后立刻拿到 taskId 凭据，之后只收状态和成品，对方内部用了什么工具、什么模型完全是「黑盒」。",
     facts: [
       { label: "通信双方", val: "客户端 Agent ↔ 远程 Agent 服务" },
       { label: "过程可见性", val: "黑盒（只看状态与成品产物）" },
-      { label: "会话与发现", val: "先 GET AgentCard，靠 taskId / contextId 串联" },
+      { label: "模型与 Effort", val: "对调用方隐藏，由远端服务自行决定" },
       { label: "人工确认", val: "无专用权限 RPC，靠状态挂起 + 续发消息" }
     ],
     actors: [
       { name: "Client Agent", role: "任务发起方" },
       { name: "Remote Agent", role: "远程服务" }
     ],
-    footnote: "<strong>核心特征：客户端只看状态和产物。</strong>远程 Agent 内部读了哪些文件、跑了什么命令，对外一律不可见。",
+    footnote: "<strong>核心特征：客户端只看状态和产物。</strong>远程 Agent 内部读了哪些文件、跑了什么命令、切了什么模型，对外一律不可见。",
     sections: [
       {
         no: "01",
@@ -1607,7 +2326,7 @@ const PROTOCOLS = {
           {
             uid: "a2a-6", dir: "left", method: "statusUpdate", kind: "流 · 终态", kindType: "res",
             short: "推送终态 TASK_STATE_COMPLETED，宣告这条任务圆满结束。",
-            why: "任务生命周期正式完结。如果发生失败（FAILED）或取消（CANCELED），也走同样的 statusUpdate 事件通道。",
+            why: "任务生命周期正式完结。如果发生失败（FAILED）或被 CancelTask 取消（CANCELED），也走同样的 statusUpdate 状态迁移。",
             fields: [
               { k: "status.state", d: "TASK_STATE_COMPLETED 代表任务完成" }
             ],
@@ -1653,16 +2372,18 @@ const PROTOCOLS = {
 const COMPARE_MATRIX = [
   { dim: "定位与关系", acp: "宿主（IDE/手机）控制本地 Agent 子进程", a2a: "一个 Agent 调用远端独立 Agent 服务" },
   { dim: "传输协议", acp: "stdio 管道上的双向 JSON-RPC 2.0（长连接）", a2a: "HTTP(S)，支持 JSON-RPC / gRPC / REST + SSE 流" },
-  { dim: "如何开始", acp: "本地直接 spawn 启动 → initialize 握手 → session/new 建会话", a2a: "先 GET /.well-known/agent-card.json 读能力名片 → 直接发任务" },
-  { dim: "过程透明度", acp: "白盒：tool_call、文件路径、增量文本全部实时汇报给宿主", a2a: "黑盒：只推 task 状态与 artifact 成品，不暴露内部工具细节" },
+  { dim: "如何开始", acp: "本地 spawn 启动 → initialize 协商能力 → session/new 建会话并下发配置", a2a: "先 GET /.well-known/agent-card.json 读能力名片 → 直接发任务" },
+  { dim: "过程透明度", acp: "白盒：plan、思考流、tool_call/update、Diff、终端输出实时汇报给宿主", a2a: "黑盒：只推 task 状态与 artifact 成品，不暴露内部工具细节" },
+  { dim: "模型与 Effort", acp: "一等公民：configOptions（model / thought_level / mode）+ set_config_option 联动刷新", a2a: "服务内部封装，对调用方不暴露模型与推理强度下拉项" },
   { dim: "人工确认 / 审批", acp: "专用反向请求 session/request_permission，带结构化选项按钮", a2a: "无专用接口；将任务状态挂起为 INPUT_REQUIRED，靠带 taskId 续发消息" },
-  { dim: "长任务断线", acp: "绑定本地进程生命周期，挂起单轮 session/prompt", a2a: "先返 taskId 句柄，支持断线后按 taskId 轮询、重连或 Webhook" }
+  { dim: "宿主能力委托", acp: "双向 RPC：Agent 可反向调用宿主 fs/* 读写文件与 terminal/* 跑命令（v1）", a2a: "无宿主文件系统/终端概念，双方完全隔离" },
+  { dim: "取消与断点续接", acp: "单向通知 session/cancel → stopReason: cancelled；session/load 重放历史或 session/resume 续接", a2a: "CancelTask RPC 将状态迁至 CANCELED；靠 taskId 轮询 GetTask、重连或 Webhook" }
 ];
 
 const COMPARE_STAGES = [
   {
-    title: "阶段 1 · 建立连接",
-    takeaway: "ACP 假定你知道要启动哪个本地程序，所以直接握手认证；A2A 面对陌生远程服务，必须先读 AgentCard 名片。",
+    title: "阶段 1 · 建立连接与初始化配置",
+    takeaway: "ACP 先握手协商宿主 fs/terminal 能力，建会话时一并下发模型 / Effort / 模式下拉项；A2A 面对陌生远程服务，只先读 AgentCard 名片。",
     acpUids: ["acp-1", "acp-2", "acp-3", "acp-4", "acp-5"],
     a2aUids: ["a2a-1", "a2a-2"]
   },
@@ -1673,33 +2394,54 @@ const COMPARE_STAGES = [
     a2aUids: ["a2a-3", "a2a-4"]
   },
   {
-    title: "阶段 3 · 过程与结果",
-    takeaway: "核心分水岭：ACP 细粒度广播 tool_call 与文字块（白盒）；A2A 只推送成品 artifact 与状态迁移（黑盒）。",
-    acpUids: ["acp-7", "acp-10", "acp-11"],
+    title: "阶段 3 · 过程、工具与产物",
+    takeaway: "核心分水岭：ACP 细粒度推送计划、工具闭环、反向写宿主文件与正文块（白盒）；A2A 只推送成品 artifact 与终态（黑盒）。",
+    acpUids: ["acp-7", "acp-8", "acp-11", "acp-12", "acp-14", "acp-15"],
     a2aUids: ["a2a-5", "a2a-6"]
   },
   {
     title: "阶段 4 · 需要人确认时",
     takeaway: "ACP 有结构化的反向审批 RPC（允许一次/总是/拒绝）；A2A 靠任务状态机切到 INPUT_REQUIRED，再发普通消息续跑。",
-    acpUids: ["acp-8", "acp-9"],
+    acpUids: ["acp-9", "acp-10"],
     a2aUids: ["a2a-7", "a2a-8"]
+  },
+  {
+    title: "阶段 5 · 运行时控制（模型 / Effort / 取消 / 恢复）",
+    takeaway: "ACP 把「切模型、调推理深度、点停止、重放历史会话」全标准化为宿主操作；A2A 将模型黑盒化，跨请求控制统一收敛到 taskId 状态机。",
+    acpUids: ["acp-cfg-1", "acp-cfg-2", "acp-cfg-3", "acp-can-3", "acp-load-1"],
+    a2aUids: ["a2a-6"],
+    a2aNote: "A2A 不向调用方暴露模型或 Reasoning Effort 切换接口；中途打断走 CancelTask（终态落到 CANCELED），断线续接靠 taskId 调 GetTask 或 SubscribeToTask。"
   }
 ];
 
-/* Flatten steps for fast lookup & navigation */
-const FLAT = {};
+/* Index every step (main + extended scenarios) for fast lookup & cross-tab jump */
 const STEP_BY_UID = {};
 
 Object.values(PROTOCOLS).forEach((p) => {
-  const list = [];
   p.sections.forEach((sec) => {
     sec.steps.forEach((st) => {
-      const enriched = { ...st, protoKey: p.key, sectionNo: sec.no, sectionTitle: sec.title, idx: list.length + 1 };
-      list.push(enriched);
-      STEP_BY_UID[st.uid] = enriched;
+      STEP_BY_UID[st.uid] = {
+        ...st,
+        protoKey: p.key,
+        sectionNo: sec.no,
+        sectionTitle: sec.title,
+        scenarioKey: null
+      };
     });
   });
-  FLAT[p.key] = list;
+  if (p.scenarios) {
+    p.scenarios.forEach((sc) => {
+      sc.steps.forEach((st) => {
+        STEP_BY_UID[st.uid] = {
+          ...st,
+          protoKey: p.key,
+          sectionNo: "04",
+          sectionTitle: "经典场景 · " + sc.shortTitle,
+          scenarioKey: sc.key
+        };
+      });
+    });
+  }
 });
 
 const state = {
@@ -1708,8 +2450,31 @@ const state = {
     acp: "acp-1",
     a2a: "a2a-1"
   },
-  compareUid: "acp-8"
+  scenario: {
+    acp: "config"
+  },
+  compareUid: "acp-cfg-2"
 };
+
+function getVisibleSteps(protoKey) {
+  const p = PROTOCOLS[protoKey];
+  const list = [];
+  p.sections.forEach((sec) => {
+    sec.steps.forEach((st) => list.push(STEP_BY_UID[st.uid]));
+  });
+  if (p.scenarios && p.scenarios.length) {
+    const activeScKey = state.scenario[protoKey] || p.scenarios[0].key;
+    const sc = p.scenarios.find((x) => x.key === activeScKey) || p.scenarios[0];
+    sc.steps.forEach((st) => list.push(STEP_BY_UID[st.uid]));
+  }
+  return list;
+}
+
+function getStepIndexMap(list) {
+  const map = {};
+  list.forEach((s, i) => { map[s.uid] = i + 1; });
+  return map;
+}
 
 function esc(s) {
   return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -1721,9 +2486,11 @@ function highlightJsonLines(obj, highlightKeys = []) {
   return raw.split("\n").map((line) => {
     let isHl = false;
     for (const k of keySet) {
-      if (line.includes('"' + k + '":')) {
-        isHl = true;
-        break;
+      if (line.includes('"' + k + '":') || line.includes('"' + k + '"')) {
+        if (line.includes('"' + k + '":') || k === "max") {
+          isHl = true;
+          break;
+        }
       }
     }
     const colored = esc(line).replace(
@@ -1771,7 +2538,9 @@ function pendingSvgHtml(mode) {
 
 function wireColors(step) {
   const isDashed = step.kindType === "res" || step.kindType === "notify";
-  const color = step.human ? "var(--human)" : (isDashed ? "var(--ink-2)" : "var(--accent)");
+  const color = step.human
+    ? "var(--human)"
+    : (step.host ? "#0e6b58" : (isDashed ? "var(--ink-2)" : "var(--accent)"));
   return { color, dashAttr: isDashed ? ' stroke-dasharray="5 4"' : "" };
 }
 
@@ -1804,18 +2573,28 @@ function arrowSegSvgHtml(step) {
   );
 }
 
-function findPairStep(step) {
+function findPairStep(step, visibleList) {
   if (!step.pair) return null;
-  const list = FLAT[step.protoKey];
-  return list.find((s) => s.uid !== step.uid && s.pair === step.pair) || null;
+  const pool = visibleList || Object.values(STEP_BY_UID).filter(
+    (s) => s.protoKey === step.protoKey && s.scenarioKey === step.scenarioKey
+  );
+  return pool.find((s) => s.uid !== step.uid && s.pair === step.pair) || null;
+}
+
+function kindClassOf(step) {
+  if (step.human) return "human";
+  if (step.host) return "host";
+  return step.kindType === "req" ? "req" : "";
 }
 
 function inspectorInnerHtml(step, options = {}) {
   const p = PROTOCOLS[step.protoKey];
   const from = step.dir === "right" ? p.actors[0].name : p.actors[1].name;
   const to = step.dir === "right" ? p.actors[1].name : p.actors[0].name;
-  const list = FLAT[step.protoKey];
-  const pairTarget = findPairStep(step);
+  const list = options.visibleList || getVisibleSteps(step.protoKey);
+  const idxMap = getStepIndexMap(list);
+  const curIdx = idxMap[step.uid];
+  const pairTarget = findPairStep(step, options.visibleList ? list : null);
   const showNav = options.showNav !== false;
 
   const fieldsHtml = step.fields && step.fields.length
@@ -1827,30 +2606,34 @@ function inspectorInnerHtml(step, options = {}) {
       "</div>"
     : "";
 
-  const pairBtn = pairTarget
-    ? '<button type="button" class="pair-jump" data-jump-uid="' + pairTarget.uid + '">跳到配对的' + (pairTarget.res ? "响应" : "请求") + "（第 " + pairTarget.idx + " 步）</button>"
+  const pairBtn = pairTarget && showNav
+    ? '<button type="button" class="pair-jump" data-jump-uid="' + pairTarget.uid + '">跳到配对的' + (pairTarget.res ? "响应" : "请求") + "（第 " + idxMap[pairTarget.uid] + " 步）</button>"
     : '<span></span>';
 
   const navHtml = showNav
     ? '<div class="ins-foot">' +
         pairBtn +
         '<div class="stepper">' +
-          '<button type="button" class="step-btn" data-nav="prev"' + (step.idx <= 1 ? " disabled" : "") + ">← 上一步</button>" +
-          '<button type="button" class="step-btn" data-nav="next"' + (step.idx >= list.length ? " disabled" : "") + ">下一步 →</button>" +
+          '<button type="button" class="step-btn" data-nav="prev"' + (curIdx <= 1 ? " disabled" : "") + ">← 上一步</button>" +
+          '<button type="button" class="step-btn" data-nav="next"' + (curIdx >= list.length ? " disabled" : "") + ">下一步 →</button>" +
         "</div>" +
       "</div>"
     : "";
 
+  const routeProgress = curIdx
+    ? esc(p.tag) + " · 第 " + curIdx + " / " + list.length + " 步 · " + esc(step.sectionTitle)
+    : esc(p.tag) + " · " + esc(step.sectionTitle);
+
   return (
     '<div class="ins-head">' +
       '<div class="ins-route">' +
-        '<span>' + esc(p.tag) + " · 第 " + step.idx + " / " + list.length + " 步 · " + esc(step.sectionTitle) + "</span>" +
+        "<span>" + routeProgress + "</span>" +
         '<span class="ins-direction">' + esc(from) + " → " + esc(to) + "</span>" +
       "</div>" +
       '<div class="ins-title-line">' +
         (step.pair ? '<span class="pair-chip' + (step.res ? " res" : "") + '">' + (step.res ? "↳ " : "") + esc(step.pair) + "</span>" : "") +
         '<h3 class="ins-method">' + esc(step.method) + "</h3>" +
-        '<span class="kind-tag ' + (step.human ? "human" : (step.kindType === "req" ? "req" : "")) + '">' + esc(step.kind) + "</span>" +
+        '<span class="kind-tag ' + kindClassOf(step) + '">' + esc(step.kind) + "</span>" +
       "</div>" +
     "</div>" +
     '<div class="ins-body">' +
@@ -1881,54 +2664,86 @@ function inlineMobileInspectorHtml(step) {
   );
 }
 
+function computePendingLabelMap(steps) {
+  const labelMap = {};
+  let runStart = -1;
+  let runLabel = "";
+  for (let i = 0; i < steps.length; i++) {
+    const s = steps[i];
+    if (s.pending === "start") {
+      runStart = i;
+      runLabel = s.pendingLabel || (s.pair ? s.pair + " 挂起中" : "挂起中");
+    } else if (s.pending === "end" && runStart >= 0) {
+      const midIdx = Math.floor((runStart + i) / 2);
+      labelMap[steps[midIdx].uid] = runLabel;
+      runStart = -1;
+      runLabel = "";
+    }
+  }
+  return labelMap;
+}
+
+function renderStepRows(rawSteps, idxMap, activeUid, pairOfActive) {
+  const pendingLabels = computePendingLabelMap(rawSteps);
+  return rawSteps.map((raw) => {
+    const step = STEP_BY_UID[raw.uid];
+    const isActive = step.uid === activeUid;
+    const isPaired = !isActive && pairOfActive && step.pair === pairOfActive;
+    const classes = [
+      "step-row",
+      step.dir === "left" ? "dir-left" : "dir-right",
+      isActive ? "active" : "",
+      isPaired ? "paired" : "",
+      step.human ? "is-human" : "",
+      step.host ? "is-host" : ""
+    ].filter(Boolean).join(" ");
+
+    const pendingSvg = pendingSvgHtml(step.pending);
+    const pendingTag = pendingLabels[step.uid]
+      ? '<span class="pending-label">' + esc(pendingLabels[step.uid]) + "</span>"
+      : "";
+    const kindCls = kindClassOf(step);
+
+    return (
+      '<button type="button" class="' + classes + '" data-uid="' + step.uid + '" aria-pressed="' + (isActive ? "true" : "false") + '">' +
+        '<div class="gutter left"><span class="step-num">' + idxMap[step.uid] + "</span></div>" +
+        '<div class="corridor">' +
+          '<span class="stem">' + stemSvgHtml(step) + "</span>" +
+          '<div class="msg-card">' +
+            '<div class="card-head">' +
+              '<div class="card-head-main">' +
+                (step.pair ? '<span class="pair-chip' + (step.res ? " res" : "") + '">' + (step.res ? "↳ " : "") + esc(step.pair) + "</span>" : "") +
+                '<span class="method-name">' + esc(step.method) + "</span>" +
+                '<span class="kind-tag ' + kindCls + '">' + esc(step.kind) + "</span>" +
+              "</div>" +
+              (isActive ? '<span class="active-pill">JSON</span>' : "") +
+            "</div>" +
+            '<p class="card-summary">' + esc(step.short) + "</p>" +
+          "</div>" +
+          '<span class="arrow-seg">' + arrowSegSvgHtml(step) + "</span>" +
+        "</div>" +
+        '<div class="gutter right">' + pendingSvg + pendingTag + "</div>" +
+      "</button>" +
+      inlineMobileInspectorHtml(step)
+    );
+  }).join("");
+}
+
 function renderProtocolView(key) {
   const p = PROTOCOLS[key];
-  const activeUid = state.selected[key];
+  const list = getVisibleSteps(key);
+  const idxMap = getStepIndexMap(list);
+  let activeUid = state.selected[key];
+  if (!idxMap[activeUid]) {
+    activeUid = list[0].uid;
+    state.selected[key] = activeUid;
+  }
   const activeStep = STEP_BY_UID[activeUid];
-  const list = FLAT[key];
+  const activeIdx = idxMap[activeUid];
   const pairOfActive = activeStep.pair ? activeStep.pair : null;
 
   const sectionsHtml = p.sections.map((sec) => {
-    const stepsHtml = sec.steps.map((raw) => {
-      const step = STEP_BY_UID[raw.uid];
-      const isActive = step.uid === activeUid;
-      const isPaired = !isActive && pairOfActive && step.pair === pairOfActive;
-      const classes = [
-        "step-row",
-        step.dir === "left" ? "dir-left" : "dir-right",
-        isActive ? "active" : "",
-        isPaired ? "paired" : "",
-        step.human ? "is-human" : ""
-      ].filter(Boolean).join(" ");
-
-      const pendingSvg = pendingSvgHtml(step.pending);
-      const pendingTag = step.uid === "acp-8" ? '<span class="pending-label">R4 挂起中</span>' : "";
-      const kindCls = step.human ? "human" : (step.kindType === "req" ? "req" : "");
-
-      return (
-        '<button type="button" class="' + classes + '" data-uid="' + step.uid + '" aria-pressed="' + (isActive ? "true" : "false") + '">' +
-          '<div class="gutter left"><span class="step-num">' + step.idx + "</span></div>" +
-          '<div class="corridor">' +
-            '<span class="stem">' + stemSvgHtml(step) + "</span>" +
-            '<div class="msg-card">' +
-              '<div class="card-head">' +
-                '<div class="card-head-main">' +
-                  (step.pair ? '<span class="pair-chip' + (step.res ? " res" : "") + '">' + (step.res ? "↳ " : "") + esc(step.pair) + "</span>" : "") +
-                  '<span class="method-name">' + esc(step.method) + "</span>" +
-                  '<span class="kind-tag ' + kindCls + '">' + esc(step.kind) + "</span>" +
-                "</div>" +
-                (isActive ? '<span class="active-pill">JSON</span>' : "") +
-              "</div>" +
-              '<p class="card-summary">' + esc(step.short) + "</p>" +
-            "</div>" +
-            '<span class="arrow-seg">' + arrowSegSvgHtml(step) + "</span>" +
-          "</div>" +
-          '<div class="gutter right">' + pendingSvg + pendingTag + "</div>" +
-        "</button>" +
-        inlineMobileInspectorHtml(step)
-      );
-    }).join("");
-
+    const stepsHtml = renderStepRows(sec.steps, idxMap, activeUid, pairOfActive);
     return (
       '<section class="phase' + (sec.branch ? " branch" : "") + '">' +
         '<div class="phase-header">' +
@@ -1943,6 +2758,37 @@ function renderProtocolView(key) {
       "</section>"
     );
   }).join("");
+
+  let scenariosHtml = "";
+  if (p.scenarios && p.scenarios.length) {
+    const activeScKey = state.scenario[key] || p.scenarios[0].key;
+    const activeSc = p.scenarios.find((s) => s.key === activeScKey) || p.scenarios[0];
+    const pillsHtml = p.scenarios.map((sc) => {
+      const on = sc.key === activeSc.key;
+      return (
+        '<button type="button" class="scenario-pill' + (on ? " on" : "") + '" data-scenario-proto="' + key + '" data-scenario-key="' + sc.key + '" aria-pressed="' + (on ? "true" : "false") + '">' +
+          esc(sc.shortTitle) +
+          '<span class="scenario-count">' + sc.steps.length + "</span>" +
+        "</button>"
+      );
+    }).join("");
+
+    scenariosHtml =
+      '<section class="phase scenarios">' +
+        '<div class="phase-header">' +
+          '<div class="phase-header-top">' +
+            '<div class="phase-title-group">' +
+              '<span class="phase-no">04</span>' +
+              '<h3 class="phase-title">经典扩展与分支场景 · ' + esc(activeSc.title) + "</h3>" +
+              '<span class="phase-tag">点击胶囊切换场景</span>' +
+            "</div>" +
+          "</div>" +
+          '<div class="scenario-bar" role="group" aria-label="ACP 经典场景切换">' + pillsHtml + "</div>" +
+          '<p class="scenario-brief">' + activeSc.brief + "</p>" +
+        "</div>" +
+        renderStepRows(activeSc.steps, idxMap, activeUid, pairOfActive) +
+      "</section>";
+  }
 
   return (
     '<div class="proto-view ' + key + '" id="view-' + key + '"' + (state.tab !== key ? " hidden" : "") + ">" +
@@ -1965,12 +2811,13 @@ function renderProtocolView(key) {
             '<div class="legend-inline">' +
               '<span class="legend-item"><span class="legend-line"></span>发起请求</span>' +
               '<span class="legend-item"><span class="legend-line dashed"></span>响应 / 流式通知</span>' +
-              '<span class="legend-item"><span class="legend-line human"></span>人工确认</span>' +
+              '<span class="legend-item"><span class="legend-line human"></span>人工干预</span>' +
+              (key === "acp" ? '<span class="legend-item"><span class="legend-line host"></span>宿主能力委托</span>' : "") +
             "</div>" +
             '<div class="stepper">' +
-              '<button type="button" class="step-btn" data-nav="prev" data-proto="' + key + '"' + (activeStep.idx <= 1 ? " disabled" : "") + ">← 上一步</button>" +
-              '<span class="step-counter">' + activeStep.idx + " / " + list.length + "</span>" +
-              '<button type="button" class="step-btn" data-nav="next" data-proto="' + key + '"' + (activeStep.idx >= list.length ? " disabled" : "") + ">下一步 →</button>" +
+              '<button type="button" class="step-btn" data-nav="prev" data-proto="' + key + '"' + (activeIdx <= 1 ? " disabled" : "") + ">← 上一步</button>" +
+              '<span class="step-counter">' + activeIdx + " / " + list.length + "</span>" +
+              '<button type="button" class="step-btn" data-nav="next" data-proto="' + key + '"' + (activeIdx >= list.length ? " disabled" : "") + ">下一步 →</button>" +
             "</div>" +
           "</div>" +
           '<div class="lane-header">' +
@@ -1981,11 +2828,12 @@ function renderProtocolView(key) {
           '<div class="diagram-body">' +
             '<div class="rails"><i class="rail-line left"></i><i class="rail-line right"></i></div>' +
             sectionsHtml +
+            scenariosHtml +
             '<div class="board-footer">' + p.footnote + "</div>" +
           "</div>" +
         "</div>" +
         '<aside class="inspector" aria-label="报文详情检视器">' +
-          inspectorInnerHtml(activeStep) +
+          inspectorInnerHtml(activeStep, { visibleList: list }) +
         "</aside>" +
       "</div>" +
     "</div>"
@@ -1999,7 +2847,7 @@ function renderCompareView() {
   const matrixHtml =
     '<section class="matrix-card">' +
       '<div class="matrix-head">' +
-        "<h2>6 维核心差异速查</h2>" +
+        "<h2>8 维核心差异速查</h2>" +
         "<p>一句话记法：ACP 是「管本地助手的操作台协议」，A2A 是「调外部服务的协作协议」</p>" +
       "</div>" +
       '<div class="matrix-wrap">' +
@@ -2015,7 +2863,7 @@ function renderCompareView() {
     "</section>";
 
   const stagesHtml = COMPARE_STAGES.map((st) => {
-    const renderCol = (uids, protoKey, label) => {
+    const renderCol = (uids, protoKey, label, extraNote) => {
       const items = uids.map((uid) => {
         const s = STEP_BY_UID[uid];
         const isSel = state.compareUid === uid;
@@ -2029,15 +2877,17 @@ function renderCompareView() {
                 '<span class="mini-dir">' + (s.dir === "right" ? "→" : "←") + "</span>" +
                 esc(s.method) +
               "</span>" +
-              '<span class="kind-tag ' + (s.human ? "human" : "") + '">' + esc(s.kind) + "</span>" +
+              '<span class="kind-tag ' + kindClassOf(s) + '">' + esc(s.kind) + "</span>" +
             "</div>" +
             "<p>" + esc(s.short) + "</p>" +
           "</button>"
         );
       }).join("");
+      const noteHtml = extraNote ? '<div class="empty-note">' + esc(extraNote) + "</div>" : "";
       return (
         '<div class="stage-col">' +
           '<div class="stage-col-label ' + protoKey + '">' + label + "</div>" +
+          noteHtml +
           items +
         "</div>"
       );
@@ -2050,8 +2900,8 @@ function renderCompareView() {
           '<span class="stage-takeaway">' + esc(st.takeaway) + "</span>" +
         "</div>" +
         '<div class="stage-cols">' +
-          renderCol(st.acpUids, "acp", "ACP · 本地白盒") +
-          renderCol(st.a2aUids, "a2a", "A2A · 远程黑盒") +
+          renderCol(st.acpUids, "acp", "ACP · 本地白盒", st.acpNote) +
+          renderCol(st.a2aUids, "a2a", "A2A · 远程黑盒", st.a2aNote) +
         "</div>" +
       "</article>"
     );
@@ -2097,6 +2947,9 @@ function setTab(tab, scrollTop = false) {
 function selectStep(uid, shouldScroll = false) {
   const st = STEP_BY_UID[uid];
   if (!st) return;
+  if (st.scenarioKey) {
+    state.scenario[st.protoKey] = st.scenarioKey;
+  }
   state.selected[st.protoKey] = uid;
   render();
   if (shouldScroll) {
@@ -2105,11 +2958,23 @@ function selectStep(uid, shouldScroll = false) {
   }
 }
 
+function selectScenario(protoKey, scenarioKey) {
+  const p = PROTOCOLS[protoKey];
+  if (!p || !p.scenarios) return;
+  const sc = p.scenarios.find((s) => s.key === scenarioKey);
+  if (!sc) return;
+  state.scenario[protoKey] = scenarioKey;
+  if (sc.steps.length) {
+    state.selected[protoKey] = sc.steps[0].uid;
+  }
+  render();
+}
+
 function stepRelative(delta) {
   if (state.tab !== "acp" && state.tab !== "a2a") return;
-  const list = FLAT[state.tab];
-  const cur = STEP_BY_UID[state.selected[state.tab]];
-  const nextIdx = cur.idx - 1 + delta;
+  const list = getVisibleSteps(state.tab);
+  const curIdx = list.findIndex((s) => s.uid === state.selected[state.tab]);
+  const nextIdx = (curIdx < 0 ? 0 : curIdx) + delta;
   if (nextIdx < 0 || nextIdx >= list.length) return;
   selectStep(list[nextIdx].uid, true);
 }
@@ -2139,6 +3004,12 @@ document.getElementById("app").addEventListener("click", (e) => {
     return;
   }
 
+  const scenarioBtn = e.target.closest("button[data-scenario-key]");
+  if (scenarioBtn) {
+    selectScenario(scenarioBtn.dataset.scenarioProto, scenarioBtn.dataset.scenarioKey);
+    return;
+  }
+
   const jumpBtn = e.target.closest("button[data-jump-uid]");
   if (jumpBtn) {
     selectStep(jumpBtn.dataset.jumpUid, true);
@@ -2149,6 +3020,9 @@ document.getElementById("app").addEventListener("click", (e) => {
   if (openFullBtn) {
     const st = STEP_BY_UID[openFullBtn.dataset.openFull];
     if (st) {
+      if (st.scenarioKey) {
+        state.scenario[st.protoKey] = st.scenarioKey;
+      }
       state.selected[st.protoKey] = st.uid;
       setTab(st.protoKey, false);
       setTimeout(() => {
